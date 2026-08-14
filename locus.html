@@ -1,0 +1,2493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Locus — a field guide to biological databases</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF;
+    --surface:#F4F4F4;
+    --line:#DEDEDE;
+    --ink:#0A0A0A;
+    --ink-soft:#6E6E6E;
+    --ink-faint:#A6A6A6;
+    --space-bg:#050505;
+    --star:#F2F2F0;
+    --star-dim:#9A9A9A;
+    --orbit-line: rgba(255,255,255,0.10);
+    --shadow: 0 1px 0 rgba(0,0,0,0.04);
+  }
+
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  h1,h2,h3, .wordmark, .tab, .submit-btn, .stamp{ font-family:'Space Grotesk', sans-serif; }
+  .mono, .eyebrow, .db-name-directory .id, .accession, code, textarea, .chip, .galaxy-hud, .galaxy-caption{ font-family:'IBM Plex Mono', monospace; }
+
+  a{ color:inherit; }
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    max-width:1040px;
+    margin:0 auto;
+    padding:38px 24px 18px;
+    display:flex;
+    flex-wrap:wrap;
+    align-items:baseline;
+    gap:6px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .wordmark{
+    font-size:22px;
+    font-weight:700;
+    letter-spacing:0.02em;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    color:var(--ink);
+  }
+  .wordmark-mark{ color:var(--ink-soft); font-size:18px; }
+  .tagline{
+    margin:0;
+    font-size:12.5px;
+    color:var(--ink-soft);
+    letter-spacing:0.02em;
+    flex:1;
+  }
+  nav.tabs{
+    display:flex;
+    gap:2px;
+    width:100%;
+    margin-top:14px;
+  }
+  .tab{
+    appearance:none;
+    border:1px solid var(--line);
+    background:var(--bg);
+    color:var(--ink-soft);
+    padding:9px 16px;
+    font-size:13.5px;
+    font-weight:600;
+    letter-spacing:0.01em;
+    cursor:pointer;
+    border-radius:3px 3px 0 0;
+    border-bottom:none;
+    position:relative;
+    top:1px;
+  }
+  .tab.active{
+    color:var(--ink);
+    background:var(--surface);
+  }
+  .tab:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visible, a:focus-visible{
+    outline:2px solid var(--ink);
+    outline-offset:2px;
+  }
+
+  main{ max-width:1040px; margin:0 auto; padding:0 24px 80px; }
+  #view-directory{ max-width:none; padding:0; }
+  .view{ display:none; }
+  .view.active{ display:block; animation:fadein .3s ease both; }
+  @media (prefers-reduced-motion: reduce){ .view.active{ animation:none; } }
+  @keyframes fadein{ from{ opacity:0; transform:translateY(4px);} to{opacity:1; transform:none;} }
+
+  /* ---------- Find view ---------- */
+  .hero{ padding:52px 0 26px; max-width:640px; }
+  .hero h1{ font-size:34px; line-height:1.15; margin:0 0 14px; letter-spacing:-0.01em; }
+  .hero-sub{ margin:0; color:var(--ink-soft); font-size:15.5px; line-height:1.55; }
+
+  .query-form{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:6px;
+    padding:18px;
+    box-shadow:var(--shadow);
+  }
+  textarea{
+    width:100%;
+    resize:vertical;
+    min-height:76px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:12px 14px;
+    font-size:14px;
+    color:var(--ink);
+    background:#fff;
+    line-height:1.5;
+  }
+  textarea::placeholder{ color:var(--ink-faint); }
+
+  .query-actions{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:14px;
+  }
+  .examples{ display:flex; align-items:center; flex-wrap:wrap; gap:8px; font-size:12px; color:var(--ink-soft); }
+  .chip{
+    border:1px dashed var(--line);
+    background:transparent;
+    color:var(--ink-soft);
+    padding:5px 10px;
+    border-radius:20px;
+    font-size:11.5px;
+    cursor:pointer;
+  }
+  .chip:hover{ border-color:var(--ink); color:var(--ink); }
+
+  .submit-btn{
+    background:var(--ink);
+    color:#fff;
+    border:none;
+    padding:11px 20px;
+    border-radius:4px;
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .submit-btn:hover{ background:#2B2B2B; }
+  .submit-btn:disabled{ opacity:0.5; cursor:progress; }
+
+  #results-area{ margin-top:34px; }
+  .results-note{ font-size:12.5px; color:var(--ink-soft); margin:0 0 16px; font-family:'IBM Plex Mono', monospace; }
+  .loading-line{ display:flex; align-items:center; gap:10px; color:var(--ink-soft); font-size:13.5px; font-family:'IBM Plex Mono', monospace; padding:14px 0; }
+  .dot{ width:6px; height:6px; border-radius:50%; background:var(--ink); animation:pulse 1.1s ease-in-out infinite; }
+  @keyframes pulse{ 0%,100%{opacity:.2;} 50%{opacity:1;} }
+  @media (prefers-reduced-motion: reduce){ .dot{ animation:none; opacity:.8; } }
+
+  .card-grid{ display:flex; flex-direction:column; gap:14px; }
+
+  .specimen-card{
+    position:relative;
+    background:var(--bg);
+    border:1px solid var(--line);
+    border-radius:4px;
+    padding:20px 22px 18px;
+  }
+  .card-top{ display:flex; align-items:flex-start; gap:14px; }
+  .stamp{
+    flex:0 0 auto;
+    width:40px; height:40px;
+    border:1.5px solid var(--ink);
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink);
+    font-weight:700;
+    font-size:14px;
+  }
+  .card-heading{ flex:1; min-width:0; }
+  .eyebrow{ font-size:10.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 4px; }
+  .db-name{ font-size:19px; font-weight:600; margin:0; }
+  .reason{ margin:12px 0 0; color:var(--ink); font-size:14.5px; line-height:1.55; }
+  .reason-label{ color:var(--ink); font-weight:600; }
+  .card-bottom{ display:flex; justify-content:flex-end; margin-top:14px; }
+  .visit-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    border:1px solid var(--ink); color:var(--ink);
+    background:transparent; text-decoration:none;
+    padding:7px 14px; border-radius:20px; font-size:13px; font-weight:600;
+  }
+  .visit-btn:hover{ background:var(--ink); color:#fff; }
+
+  .empty-state{ padding:30px 0; color:var(--ink-soft); font-size:14px; }
+
+  /* ---------- Galaxy directory view ---------- */
+  .galaxy-wrap{
+    background:var(--space-bg);
+    color:var(--star);
+    padding:0 0 36px;
+  }
+  .galaxy-head{
+    max-width:1040px; margin:0 auto;
+    padding:44px 24px 18px;
+  }
+  .galaxy-head h1{ font-size:28px; margin:0 0 8px; letter-spacing:-0.01em; color:var(--star); }
+  .galaxy-head p{ margin:0; color:#B9B9B9; font-size:13.5px; line-height:1.6; max-width:620px; }
+
+  .galaxy-controls{
+    max-width:1040px; margin:16px auto 0; padding:0 24px;
+    display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  }
+  #galaxy-filter{
+    flex:1; min-width:180px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.18);
+    color:var(--star);
+    padding:9px 14px;
+    border-radius:20px;
+    font-size:13px;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  #galaxy-filter::placeholder{ color:#8A8A8A; }
+  .galaxy-btn{
+    background:transparent;
+    border:1px solid rgba(255,255,255,0.28);
+    color:var(--star);
+    padding:9px 14px;
+    border-radius:20px;
+    font-size:12.5px;
+    cursor:pointer;
+    font-family:'IBM Plex Mono', monospace;
+  }
+  .galaxy-btn:hover{ background:rgba(255,255,255,0.1); }
+
+  .galaxy-stage{
+    position:relative;
+    max-width:1040px; margin:18px auto 0; padding:0 24px;
+  }
+  #galaxy-canvas{
+    width:100%;
+    height:min(78vh, 720px);
+    display:block;
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:6px;
+    background:var(--space-bg);
+    cursor:grab;
+    touch-action:none;
+  }
+  #galaxy-canvas.dragging{ cursor:grabbing; }
+
+  .galaxy-tooltip{
+    position:absolute;
+    pointer-events:none;
+    background:#fff;
+    color:#0A0A0A;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    padding:4px 8px;
+    border-radius:3px;
+    transform:translate(-50%, -130%);
+    white-space:nowrap;
+    opacity:0;
+    transition:opacity .12s ease;
+    z-index:5;
+  }
+  .galaxy-tooltip.visible{ opacity:1; }
+
+  .galaxy-caption{
+    max-width:1040px; margin:14px auto 0; padding:0 24px;
+    font-size:11.5px; color:#8A8A8A; line-height:1.6;
+  }
+
+  .no-results{ padding:24px 0; color:var(--ink-soft); font-size:14px; }
+
+  footer{
+    max-width:1040px; margin:0 auto; padding:30px 24px 60px;
+    color:var(--ink-soft); font-size:12px; line-height:1.6;
+    border-top:1px solid var(--line);
+  }
+  footer a{ color:var(--ink); text-decoration:underline; }
+
+  @media (max-width: 640px){
+    .hero h1{ font-size:27px; }
+    .query-actions{ align-items:stretch; }
+    .submit-btn{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="wordmark"><span class="wordmark-mark">◇</span>LOCUS</div>
+    <p class="tagline">a field guide to biological databases</p>
+    <nav class="tabs">
+      <button class="tab active" data-view="find" type="button">Find a database</button>
+      <button class="tab" data-view="directory" type="button">Full directory</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- FIND VIEW -->
+    <section id="view-find" class="view active">
+      <div class="hero">
+        <h1>Describe what you're trying to find.</h1>
+        <p class="hero-sub">Tell Locus about the organism, molecule, or research question you're working with. It will pull the five catalog entries most likely to fit — and say why each one made the list.</p>
+      </div>
+
+      <form id="query-form" class="query-form">
+        <textarea id="query-input" rows="3" required
+          placeholder="e.g. I need 3D structures of a human kinase to plan a drug-binding study..."></textarea>
+        <div class="query-actions">
+          <div class="examples">
+            <span>Try:</span>
+            <button type="button" class="chip" data-example="I need 3D structures of a human protein to study a drug binding site">protein structure for drug design</button>
+            <button type="button" class="chip" data-example="I have RNA-seq gene expression data from tumor samples and want to compare it to public datasets">RNA-seq in cancer</button>
+            <button type="button" class="chip" data-example="I want to look up which genes give bacteria antibiotic resistance">antibiotic resistance genes</button>
+            <button type="button" class="chip" data-example="I need the reference genome and annotation for zebrafish">zebrafish genome</button>
+          </div>
+          <button type="submit" class="submit-btn" id="submit-btn">Search the catalog →</button>
+        </div>
+      </form>
+
+      <div id="results-area" aria-live="polite"></div>
+    </section>
+
+    <!-- DIRECTORY VIEW: THE GALAXY -->
+    <section id="view-directory" class="view">
+      <div class="galaxy-wrap">
+        <div class="galaxy-head">
+          <h1>The catalog, as a galaxy</h1>
+          <p>Every category is a sun. Every database is a point orbiting it. Suns that sit near each other tend to get reached for on the same kinds of problems. Leave it alone and the whole thing keeps turning.</p>
+        </div>
+        <div class="galaxy-controls">
+          <input type="search" id="galaxy-filter" placeholder="Filter — highlights matches, dims the rest…">
+          <button type="button" class="galaxy-btn" id="galaxy-reset">Reset view</button>
+        </div>
+        <div class="galaxy-stage">
+          <canvas id="galaxy-canvas"></canvas>
+          <div class="galaxy-tooltip" id="galaxy-tooltip"></div>
+        </div>
+        <p class="galaxy-caption" id="galaxy-caption">Drag to pan · scroll or pinch to zoom · hover a point for its name · click to open it. Within each system, the middle "habitable" orbit holds the database Locus judges most central to that category; the rest fan outward from newest (inner) to most dated (outer).</p>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    Catalog compiled and condensed from Wikipedia's
+    <a href="https://en.wikipedia.org/wiki/List_of_biological_databases" target="_blank" rel="noopener noreferrer">List of biological databases</a>.
+    Descriptions here are short summaries for quick orientation — visit each database directly for full documentation, citation guidance, and terms of use. Orbit position (era) and sun-to-sun spacing (topical overlap) are Locus's editorial estimates for navigation, not verified data.
+    <br><br>
+    Made by Saanchi and Claude.
+  </footer>
+
+<script>
+const BIO_DATABASES = [
+  { 
+    "id": "biotools",
+    "name": "bio.tools",
+    "url": "https://bio.tools/",
+    "category": "Meta databases",
+    "description": "Community-driven registry for bioinformatics software, databases, and other data resources.",
+    "keywords": ["bio.tools", "biotools", "bioinformatics", "software", "tools", "databases", "data resources", "registry", "ELIXIR", "life sciences", "resource discovery"]
+  },
+  {
+    "id": "consensuspathdb",
+    "name": "ConsensusPathDB",
+    "url": "https://consensuspathdb.org/",
+    "category": "Meta databases",
+    "description": "Integrates molecular functional interactions and pathway information from multiple biological databases.",
+    "keywords": ["ConsensusPathDB", "pathway", "molecular interactions", "functional interactions", "protein interaction", "gene interaction", "metabolic pathway", "signaling", "pathway enrichment", "integration", "systems biology"]
+  },
+  {
+    "id": "entrez",
+    "name": "Entrez",
+    "url": "https://www.ncbi.nlm.nih.gov/search/",
+    "category": "Meta databases",
+    "description": "NCBI's integrated search system for querying biological databases and literature resources.",
+    "keywords": ["Entrez", "NCBI", "integrated search", "gene", "protein", "nucleotide", "genome", "PubMed", "SNP", "taxonomy", "biological databases", "sequence search"]
+  },
+  {
+    "id": "expasy",
+    "name": "Expert Protein Analysis System (ExPASy)",
+    "url": "https://www.expasy.org/",
+    "category": "Protein analysis",
+    "description": "Integrated portal providing access to protein sequence analysis tools, databases, and molecular biology resources.",
+    "keywords": ["ExPASy", "protein analysis", "protein sequence", "proteomics", "bioinformatics", "protein tools", "Swiss-Prot", "UniProt", "sequence analysis", "molecular biology"]
+  },
+  {
+    "id": "neuroscience_information_framework",
+    "name": "Neuroscience Information Framework",
+    "url": "https://www.neuinfo.org/",
+    "category": "Neuroscience resources",
+    "description": "Integrates and provides discovery of neuroscience databases, tools, and other research resources.",
+    "keywords": ["Neuroscience Information Framework", "NIF", "neuroscience", "brain", "neural", "database search", "resource discovery", "neuroinformatics", "tools", "data"]
+  },
+  {
+    "id": "molbio_information_service",
+    "name": "MolBio Information Service",
+    "url": "https://www.hsls.pitt.edu/",
+    "category": "Bioinformatics resources",
+    "description": "University library resource collection providing access to molecular biology and bioinformatics databases and tools.",
+    "keywords": ["MolBio Information Service", "molecular biology", "bioinformatics", "databases", "software", "resources", "HSLS", "Pittsburgh"]
+  },
+  {
+    "id": "obrc",
+    "name": "OBRC: Online Bioinformatics Resources Collection",
+    "url": "https://www.hsls.pitt.edu/obrc/",
+    "category": "Bioinformatics resources",
+    "description": "Curated collection of online bioinformatics databases, software, and molecular biology resources.",
+    "keywords": ["OBRC", "Online Bioinformatics Resources Collection", "bioinformatics", "databases", "software", "molecular biology", "sequence analysis", "resources"]
+  },
+  {
+    "id": "hsls_molbio_available_software",
+    "name": "HSLS MolBio Available Software",
+    "url": "https://hsls.libguides.com/molecularbiology",
+    "category": "Bioinformatics resources",
+    "description": "Library guide providing access to molecular biology software and computational resources.",
+    "keywords": ["HSLS", "MolBio", "molecular biology software", "bioinformatics software", "Pittsburgh", "software resources"]
+  },
+  {
+    "id": "hsls_databases_az",
+    "name": "Databases A-Z",
+    "url": "https://www.hsls.pitt.edu/",
+    "category": "Biomedical databases",
+    "description": "Alphabetical discovery resource for databases available through the University of Pittsburgh Health Sciences Library System.",
+    "keywords": ["Databases A-Z", "HSLS", "biomedical databases", "health sciences", "database directory", "Pittsburgh", "research resources"]
+  },
+  {
+    "id": "pombase",
+    "name": "PomBase",
+    "url": "https://www.pombase.org/",
+    "category": "Model organism databases",
+    "description": "Knowledgebase providing curated genomic, genetic, functional, phenotype, and literature information for Schizosaccharomyces pombe.",
+    "keywords": ["PomBase", "Schizosaccharomyces pombe", "fission yeast", "yeast", "model organism", "genome", "gene", "protein", "phenotype", "genetics", "functional annotation"]
+  },
+  {
+    "id": "subtiwiki",
+    "name": "SubtiWiki",
+    "url": "https://subtiwiki.uni-goettingen.de/",
+    "category": "Model organism databases",
+    "description": "Integrated knowledgebase for genes, proteins, pathways, and functional information in Bacillus subtilis.",
+    "keywords": ["SubtiWiki", "Bacillus subtilis", "B subtilis", "model bacterium", "gene", "protein", "pathway", "metabolism", "regulation", "functional annotation"]
+  },
+  {
+    "id": "tair",
+    "name": "TAIR",
+    "url": "https://www.arabidopsis.org/",
+    "category": "Model organism databases",
+    "description": "Knowledgebase integrating genome, gene, genetic, phenotype, expression, and literature information for Arabidopsis thaliana.",
+    "keywords": ["TAIR", "Arabidopsis", "Arabidopsis thaliana", "plant", "model organism", "gene", "genome", "phenotype", "expression", "genetics", "annotation"]
+  },
+  {
+    "id": "ddbj",
+    "name": "DNA Data Bank of Japan",
+    "url": "https://www.ddbj.nig.ac.jp/",
+    "category": "DNA databases",
+    "description": "Primary international repository for nucleotide sequence data submitted by researchers worldwide.",
+    "keywords": ["DDBJ", "DNA Data Bank of Japan", "nucleotide", "DNA", "sequence", "INSDC", "GenBank", "ENA", "sequence submission", "genome"]
+  },
+  {
+    "id": "embl",
+    "name": "EMBL",
+    "url": "https://www.ebi.ac.uk/ena/",
+    "category": "DNA databases",
+    "description": "European nucleotide sequence repository providing public access to submitted DNA and RNA sequence data.",
+    "keywords": ["EMBL", "European Molecular Biology Laboratory", "ENA", "European Nucleotide Archive", "nucleotide", "DNA", "RNA", "sequence", "INSDC", "sequence archive"]          
+  },
+  {
+    "id": "genbank",
+    "name": "GenBank",
+    "url": "https://www.ncbi.nlm.nih.gov/genbank/",
+    "category": "DNA databases",
+    "description": "NCBI's primary public repository of nucleotide sequences from organisms and environmental samples.",
+    "keywords": ["GenBank", "NCBI", "nucleotide", "DNA", "RNA", "sequence", "genome", "sequence submission", "INSDC", "accession"]
+  },
+  {
+    "id": "international_nucleotide_sequence_database",
+    "name": "International Nucleotide Sequence Database",
+    "url": "https://www.insdc.org/",
+    "category": "DNA databases",
+    "description": "International collaboration linking DDBJ, ENA, and GenBank to maintain synchronized nucleotide sequence archives.",
+    "keywords": ["INSD", "INSDC", "International Nucleotide Sequence Database", "DDBJ", "ENA", "GenBank", "nucleotide", "sequence archive", "DNA", "RNA"]
+  },
+  {
+    "id": "sequence_read_archive",
+    "name": "Sequence Read Archive",
+    "url": "https://www.ncbi.nlm.nih.gov/sra/",
+    "category": "DNA databases",
+    "description": "Archive of raw high-throughput sequencing reads from next-generation sequencing experiments.",
+    "keywords": ["SRA", "Sequence Read Archive", "raw reads", "NGS", "next generation sequencing", "high throughput sequencing", "FASTQ", "sequencing data", "NCBI"]  
+  },
+  {
+    "id": "hapmap",
+    "name": "HapMap",
+    "url": "https://www.hapmap.org/",
+    "category": "Genetic variation",
+    "description": "Reference resource documenting common human genetic variation and haplotypes across populations.",
+    "keywords": ["HapMap", "haplotype", "human variation", "SNP", "genetic variation", "population genetics", "genome", "polymorphism", "GWAS"]  
+  },
+  {
+    "id": "omim",
+    "name": "OMIM (Online Mendelian Inheritance in Man)",
+    "url": "https://www.omim.org/",
+    "category": "Human genetics and disease",
+    "description": "Curated knowledgebase linking human genes and genetic disorders with phenotypic and literature information.",
+    "keywords": ["OMIM", "Online Mendelian Inheritance in Man", "human genetics", "Mendelian disease", "genetic disorder", "gene", "phenotype", "mutation", "disease", "clinical genetics"]  
+  },
+  {
+    "id": "refseq",
+    "name": "RefSeq",
+    "url": "https://www.ncbi.nlm.nih.gov/refseq/",
+    "category": "Reference sequences",
+    "description": "NCBI's curated non-redundant reference collection of genomic, transcript, and protein sequences.",
+    "keywords": ["RefSeq", "reference sequence", "NCBI", "genome", "transcript", "mRNA", "protein", "curated sequence", "non-redundant", "annotation"]    
+  },
+  {
+    "id": "1000_genomes",
+    "name": "1000 Genomes Project",
+    "url": "https://www.internationalgenome.org/",
+    "category": "Human genetic variation",
+    "description": "International project providing a reference catalogue of human genomic variation across diverse populations.",
+    "keywords": ["1000 Genomes", "1000 Genomes Project", "human genome", "genetic variation", "SNP", "indel", "structural variation", "population genetics", "genomics", "haplotype"]  
+  },
+  {
+    "id": "eggnog",
+    "name": "EggNOG Database",
+    "url": "https://eggnog-mapper.embl.de/",
+    "category": "Orthology and functional annotation",
+    "description": "Hierarchical orthology resource providing phylogenetic relationships, sequence alignments, and functional annotations.",
+    "keywords": ["eggNOG", "orthology", "ortholog", "gene family", "functional annotation", "phylogeny", "protein", "sequence alignment", "HMM", "comparative genomics"]  
+  },
+  {
+    "id": "nucleosome_positioning_region_database",
+    "name": "Nucleosome positioning region database",
+    "url": "https://www.ncbi.nlm.nih.gov/",
+    "category": "Chromatin and nucleosome positioning",
+    "description": "Resource collecting experimentally characterized regions associated with nucleosome positioning.",
+    "keywords": ["nucleosome", "nucleosome positioning", "chromatin", "DNA", "histone", "genomic regions", "chromatin structure", "nucleosome occupancy"]  
+  },
+  {
+    "id": "arrayexpress",
+    "name": "ArrayExpress",
+    "url": "https://www.ebi.ac.uk/biostudies/arrayexpress/",
+    "category": "Gene expression",
+    "description": "Archive of functional genomics experiments including microarray and sequencing-based expression datasets.",
+    "keywords": ["ArrayExpress", "gene expression", "functional genomics", "microarray", "RNA-seq", "transcriptomics", "expression profiling", "EMBL-EBI", "BioStudies"]  
+  },
+  {
+    "id": "bioinformatic_harvester",
+    "name": "Bioinformatic Harvester",
+    "url": "https://www.harvester.nsc.ru/",
+    "category": "Genome and gene information",
+    "description": "Search and integration resource for genome annotations and bioinformatics information from multiple sources.",
+    "keywords": ["Bioinformatic Harvester", "genome", "gene", "annotation", "bioinformatics", "integrated search", "genomic data"]    
+  },
+  {
+    "id": "cancer_gene_database",
+    "name": "Cancer gene database",
+    "url": "https://www.ncbi.nlm.nih.gov/",
+    "category": "Cancer genomics",
+    "description": "Resource compiling genes and genomic information relevant to cervical cancer research.",
+    "keywords": ["cervical cancer", "cancer genes", "gene database", "oncogenomics", "tumor", "genomics", "biomarker", "cancer research"]  
+  },
+  {
+    "id": "ensembl",
+    "name": "Ensembl",
+    "url": "https://www.ensembl.org/",
+    "category": "Genome databases",
+    "description": "Genome browser and annotation resource for human, vertebrate, and other eukaryotic genomes.",
+    "keywords": ["Ensembl", "genome browser", "genome", "gene", "transcript", "protein", "variant", "vertebrate", "eukaryote", "annotation", "comparative genomics"]  
+  },
+  {
+    "id": "ensembl_genomes",
+    "name": "Ensembl Genomes",
+    "url": "https://asia.ensembl.org/index.html",
+    "category": "Genome databases",
+    "description": "Genome-scale data and comparative genomics resource for bacteria, protists, fungi, plants, and invertebrate metazoa.",
+    "keywords": ["Ensembl Genomes", "genome", "bacteria", "protists", "fungi", "plants", "invertebrates", "comparative genomics", "gene", "annotation"]   
+  },
+  {
+    "id": "flybase",
+    "name": "FlyBase",
+    "url": "https://flybase.org/",
+    "category": "Genome databases",
+    "description": "Curated genomic, genetic, functional, and phenotype database for Drosophila melanogaster and related species.",
+    "keywords": ["FlyBase", "Drosophila", "Drosophila melanogaster", "fruit fly", "gene", "genome", "phenotype", "genetics", "transcript", "protein"]  
+  },
+  {
+    "id": "gene_disease_database",
+    "name": "Gene Disease Database",
+    "url": "https://www.ncbi.nlm.nih.gov/",
+    "category": "Gene-disease associations",
+    "description": "Resource linking genes with diseases and associated biological or clinical information.",
+    "keywords": ["gene disease", "gene-disease association", "disease genes", "human genetics", "genomics", "clinical", "mutation", "phenotype"]      
+  },
+  {
+    "id": "geo",
+    "name": "Gene Expression Omnibus (GEO)",
+    "url": "https://www.ncbi.nlm.nih.gov/geo/",
+    "category": "Gene expression",
+    "description": "Public repository of functional genomics datasets from array- and sequence-based experiments.",
+    "keywords": ["GEO", "Gene Expression Omnibus", "gene expression", "RNA-seq", "microarray", "transcriptomics", "functional genomics", "expression profile", "NCBI"]  
+  },
+  {
+    "id": "human_protein_atlas",
+    "name": "Human Protein Atlas",
+    "url": "https://www.proteinatlas.org/",
+    "category": "Protein expression",
+    "description": "Maps human protein expression and localization across tissues, cells, organs, and cancer samples.",
+    "keywords": ["Human Protein Atlas", "HPA", "protein expression", "protein localization", "immunohistochemistry", "IHC", "tissue", "cell", "cancer", "subcellular", "antibody"]    
+  },
+  {
+    "id": "legume_information_system",
+    "name": "Legume Information System",
+    "url": "https://www.legumeinfo.org/",
+    "category": "Plant genomics",
+    "description": "Federated genomic and comparative genomics resource for legume species.",
+    "keywords": ["Legume Information System", "LIS", "legume", "plant genomics", "soybean", "Medicago", "comparative genomics", "gene", "genome", "plant"]  
+  },
+  {
+    "id": "national_genomic_research_library",
+    "name": "National Genomic Research Library",
+    "url": "https://www.genomicsengland.co.uk/",
+    "category": "Human genomics",
+    "description": "Whole-genome dataset and infrastructure for genomic research into rare conditions and cancer.",
+    "keywords": ["National Genomic Research Library", "NGRL", "Genomics England", "whole genome", "WGS", "rare disease", "cancer", "genomic medicine", "NHS"]  
+  },
+  {
+    "id": "personal_genome_project",
+    "name": "Personal Genome Project",
+    "url": "https://www.personalgenomes.org/",
+    "category": "Human genomics",
+    "description": "Open human genomic and associated health data resource based on volunteer participants.",
+    "keywords": ["Personal Genome Project", "PGP", "human genome", "genomic data", "personal genomics", "volunteers", "phenotype", "genotype", "open data"]               
+  },
+  {
+    "id": "phytozome",
+    "name": "Phytozome",
+    "url": "https://phytozome-next.jgi.doe.gov/",
+    "category": "Plant comparative genomics",
+    "description": "Comparative genomics platform for sequenced green plants and algae genomes.",
+    "keywords": ["Phytozome", "plant genomics", "green plants", "algae", "genome", "comparative genomics", "gene", "protein", "JGI"]  
+  },
+  {
+    "id": "rgd",
+    "name": "RGD (Rat Genome Database)",
+    "url": "https://rgd.mcw.edu/",
+    "category": "Genome and phenotype databases",
+    "description": "Integrated genomic, genetic, phenotype, and disease resource for the rat Rattus norvegicus.",
+    "keywords": ["RGD", "Rat Genome Database", "rat", "Rattus norvegicus", "genome", "gene", "phenotype", "disease", "genetics", "model organism"]                
+  },
+  {
+    "id": "saccharomyces_genome_database",
+    "name": "Saccharomyces Genome Database",
+    "url": "https://www.yeastgenome.org/",
+    "category": "Genome databases",
+    "description": "Curated genomic, genetic, functional, and phenotype information for Saccharomyces cerevisiae.",
+    "keywords": ["Saccharomyces Genome Database", "SGD", "Saccharomyces cerevisiae", "baker's yeast", "yeast", "gene", "genome", "protein", "phenotype", "genetics"]                
+  },
+  {
+    "id": "snpedia",
+    "name": "SNPedia",
+    "url": "https://www.snpedia.com/",
+    "category": "Genetic variation",
+    "description": "Wiki-style database of human SNPs and their reported associations with phenotypes and traits.",
+    "keywords": ["SNPedia", "SNP", "single nucleotide polymorphism", "genetic variation", "genotype", "phenotype", "human genetics", "variant", "polymorphism"]  
+  },
+  {
+    "id": "soybase",
+    "name": "SoyBase Database",
+    "url": "https://www.soybase.org/",
+    "category": "Plant genomics",
+    "description": "USDA resource for soybean genetics, genomics, traits, markers, and related biological information.",
+    "keywords": ["SoyBase", "soybean", "Glycine max", "plant genetics", "plant genomics", "QTL", "marker", "gene", "trait", "USDA"]  
+  },
+  {
+    "id": "ucsc_malaria_genome_browser",
+    "name": "UCSC Malaria Genome Browser",
+    "url": "https://genome.ucsc.edu/cgi-bin/hgGateway?db=plasmo",
+    "category": "Genome databases",
+    "description": "Genome browser for malaria-causing Plasmodium species and comparative genomic analysis.",
+    "keywords": ["UCSC Malaria Genome Browser", "malaria", "Plasmodium", "Plasmodium falciparum", "genome browser", "genomics", "gene", "variant", "parasite"]  
+  },
+  {
+    "id": "wormbase",
+    "name": "Wormbase",
+    "url": "https://wormbase.org/",
+    "category": "Genome databases",
+    "description": "Curated genomic, genetic, functional, and phenotype resource for Caenorhabditis elegans and related nematodes.",
+    "keywords": ["WormBase", "Caenorhabditis elegans", "C elegans", "nematode", "worm", "genome", "gene", "phenotype", "genetics", "protein"]  
+  },
+  {
+    "id": "wormbase_parasite",
+    "name": "WormBase ParaSite",
+    "url": "https://parasite.wormbase.org/",
+    "category": "Parasite genomics",
+    "description": "Genomic and functional resource for parasitic helminths and other parasitic species.",
+    "keywords": ["WormBase ParaSite", "parasite", "helminth", "nematode", "flatworm", "genome", "gene", "comparative genomics", "parasitic species"]      
+  },
+  {
+    "id": "xenbase",
+    "name": "Xenbase",
+    "url": "https://www.xenbase.org/",
+    "category": "Model organism databases",
+    "description": "Integrated genomic, genetic, expression, phenotype, and literature resource for Xenopus frog models.",
+    "keywords": ["Xenbase", "Xenopus", "Xenopus laevis", "Xenopus tropicalis", "frog", "model organism", "genome", "gene", "phenotype", "development"]  
+  },
+  {
+    "id": "zfin",
+    "name": "Zebrafish Information Network",
+    "url": "https://zfin.org/",
+    "category": "Model organism databases",
+    "description": "Curated genomic, genetic, expression, phenotype, and disease information for zebrafish.",
+    "keywords": ["Zebrafish Information Network", "ZFIN", "zebrafish", "Danio rerio", "model organism", "genome", "gene", "phenotype", "development", "disease"]      
+  },
+  {
+    "id": "phi_base",
+    "name": "PHI-base",
+    "url": "https://www.phi-base.org/",
+    "category": "Phenotype databases",
+    "description": "Curated database linking pathogen genes with experimentally observed phenotypes during host interactions.",
+    "keywords": ["PHI-base", "pathogen-host interaction", "pathogen", "host", "gene", "phenotype", "virulence", "infection", "effector", "fungi", "bacteria"]   
+  },
+  {
+    "id": "mirbase",
+    "name": "miRBase",
+    "url": "https://www.mirbase.org/",
+    "category": "RNA databases",
+    "description": "Reference database of published microRNA sequences and annotations across species.",
+    "keywords": ["miRBase", "microRNA", "miRNA", "miR", "small RNA", "RNA", "sequence", "mature miRNA", "precursor", "annotation", "gene regulation"]     
+  },
+  {
+    "id": "polymirts",
+    "name": "PolymiRTS",
+    "url": "https://compbio.uthsc.edu/miRSNP/",
+    "category": "RNA databases",
+    "description": "Database of genetic variants in putative microRNA target sites and their potential regulatory effects.",
+    "keywords": ["PolymiRTS", "miRNA", "microRNA", "SNP", "variant", "target site", "3 UTR", "gene regulation", "polymorphism", "post-transcriptional regulation"]  
+  },
+  {
+    "id": "polyq",
+    "name": "PolyQ",
+    "url": "https://www.neurodegenerationresearch.eu/",
+    "category": "RNA and repeat databases",
+    "description": "Resource cataloguing polyglutamine repeats in disease-associated and non-disease proteins.",
+    "keywords": ["PolyQ", "polyglutamine", "CAG repeat", "trinucleotide repeat", "repeat expansion", "protein", "neurodegenerative disease", " Huntington", "spinocerebellar", "disease"]   
+  },
+  {
+    "id": "rfam",
+    "name": "Rfam",
+    "url": "https://rfam.org/",
+    "category": "RNA databases",
+    "description": "Curated database of RNA families represented by sequence alignments, covariance models, and functional annotations.",
+    "keywords": ["Rfam", "RNA families", "noncoding RNA", "ncRNA", "RNA sequence", "covariance model", "RNA alignment", "miRNA", "rRNA", "tRNA", "sRNA"]  
+  },
+  {
+    "id": "iresbase",
+    "name": "IRESbase",
+    "url": "https://reprod.njmu.edu.cn/cgi-bin/iresbase/index",
+    "category": "RNA databases",
+    "description": "Database of experimentally validated internal ribosome entry sites in mRNAs.",
+    "keywords": ["IRESbase", "IRES", "internal ribosome entry site", "RNA", "mRNA", "translation", "ribosome", "translation initiation", "viral RNA", "eukaryotic RNA"]  
+  },
+  {
+    "id": "interpro",
+    "name": "InterPro",
+    "url": "https://www.ebi.ac.uk/interpro/",
+    "category": "Protein sequence",
+    "description": "Integrates protein family, domain, and functional site signatures to classify proteins and predict conserved regions.",
+    "keywords": ["InterPro", "protein family", "protein domain", "functional site", "sequence annotation", "domain prediction", "protein classification", "protein sequence", "family", "motif"]    
+  },
+  {
+    "id": "nextprot",
+    "name": "NeXtProt",
+    "url": "https://www.nextprot.org/",
+    "category": "Human proteins",
+    "description": "Human protein-centric knowledge resource integrating sequence, function, expression, disease, and proteomics evidence.",
+    "keywords": ["NeXtProt", "human protein", "proteome", "protein function", "protein expression", "protein sequence", "proteomics", "disease", "isoform", "post-translational modification"]  
+  },
+  {
+    "id": "wiki_pi",
+    "name": "Wiki-Pi",
+    "url": "https://severus.dbmi.pitt.edu/wiki-pi/",
+    "category": "Protein interactions",
+    "description": "Resource of experimentally supported protein-protein interactions involving human proteins.",
+    "keywords": ["Wiki-Pi", "protein interaction", "protein-protein interaction", "PPI", "human protein", "interaction network", "molecular interaction", "network biology"]      
+  },
+  {
+    "id": "hprd",
+    "name": "Human Protein Reference Database",
+    "url": "https://www.hprd.org/",
+    "category": "Protein interactions",
+    "description": "Curated human protein knowledgebase containing protein interactions, modifications, localization, and functional information.",
+    "keywords": ["Human Protein Reference Database", "HPRD", "human protein", "protein interaction", "PPI", "post-translational modification", "PTM", "localization", "function"]  
+  },
+  {
+    "id": "pfam",
+    "name": "Pfam",
+    "url": "https://pfam.xfam.org/",
+    "category": "Protein sequence",
+    "description": "Protein family database containing curated sequence alignments and profile hidden Markov models for protein domains and families.",
+    "keywords": ["Pfam", "protein family", "protein domain", "HMM", "hidden Markov model", "sequence alignment", "domain annotation", "protein sequence", "family", "motif"]  
+  },
+  {
+    "id": "human_proteinpedia",
+    "name": "Human Proteinpedia",
+    "url": "http://www.humanproteinpedia.org/",
+    "category": "Human proteins",
+    "description": "Community resource for human protein information and experimental annotations based on protein reference data.",
+    "keywords": ["Human Proteinpedia", "protein", "human protein", "HPRD", "protein annotation", "experimental data", "protein expression", "protein interaction"]  
+  },
+  {
+    "id": "prints",
+    "name": "PRINTS",
+    "url": "https://www.bioinf.manchester.ac.uk/dbbrowser/PRINTS/",
+    "category": "Protein sequence",
+    "description": "Protein fingerprint database representing conserved motifs characteristic of protein families.",
+    "keywords": ["PRINTS", "protein fingerprints", "protein family", "motif", "sequence", "conserved region", "protein classification", "functional annotation"]      
+  },
+  {
+    "id": "prosite",
+    "name": "PROSITE",
+    "url": "https://prosite.expasy.org/",
+    "category": "Protein sequence",
+    "description": "Database of protein families, domains, and functional sites represented by diagnostic patterns and profiles.",
+    "keywords": ["PROSITE", "protein domain", "protein family", "functional site", "pattern", "profile", "motif", "sequence analysis", "protein annotation", "ExPASy"]  
+  },
+  {
+    "id": "protein_information_resource",
+    "name": "Protein Information Resource",
+    "url": "https://proteininformationresource.org/",
+    "category": "Protein sequence",
+    "description": "Protein bioinformatics resource providing protein sequence, family, functional, and classification information.",
+    "keywords": ["Protein Information Resource", "PIR", "protein sequence", "protein family", "protein function", "annotation", "protein classification", "bioinformatics"]     
+  },
+  {
+    "id": "superfamily",
+    "name": "SUPERFAMILY",
+    "url": "https://supfam.org/",
+    "category": "Protein sequence",
+    "description": "Library of profile HMMs and annotations for protein structural superfamilies and families.",
+    "keywords": ["SUPERFAMILY", "protein superfamily", "HMM", "hidden Markov model", "protein structure", "protein family", "sequence annotation", "domain", "structural classification"]     
+  },
+  {
+    "id": "swiss_prot",
+    "name": "Swiss-Prot",
+    "url": "https://www.uniprot.org/",
+    "category": "Protein sequence",
+    "description": "Expert-curated protein sequence and functional annotation database within the UniProt Knowledgebase.",
+    "keywords": ["Swiss-Prot", "UniProt", "protein sequence", "protein annotation", "curated protein", "function", "enzyme", "isoform", "PTM", "post-translational modification", "accession"]     
+  },
+  {
+    "id": "protein_data_bank",
+    "name": "Protein Data Bank",
+    "url": "https://www.rcsb.org/",
+    "category": "Protein structure",
+    "description": "Global archive of experimentally determined three-dimensional structures of proteins, nucleic acids, and complexes.",
+    "keywords": ["Protein Data Bank", "PDB", "RCSB PDB", "protein structure", "3D structure", "crystal structure", "NMR", "cryo-EM", "macromolecular structure", "ligand"]      
+  },
+  {
+    "id": "scop",
+    "name": "Structural Classification of Proteins",
+    "url": "https://scop.mrc-lmb.cam.ac.uk/",
+    "category": "Protein structure",
+    "description": "Classifies protein domains according to structural and evolutionary relationships.",
+    "keywords": ["SCOP", "Structural Classification of Proteins", "protein structure", "protein domain", "structural classification", "fold", "superfamily", "family", "evolution"]   
+  },
+  {
+    "id": "cath",
+    "name": "CATH database",
+    "url": "https://www.cathdb.info/",
+    "category": "Protein structure",
+    "description": "Hierarchical classification of protein domains by class, architecture, topology, and homologous superfamily.",
+    "keywords": ["CATH", "protein structure", "domain", "protein domain", "fold", "architecture", "topology", "homologous superfamily", "structural classification"]  
+  },
+  {
+    "id": "modbase",
+    "name": "ModBase",
+    "url": "https://modbase.compbio.ucsf.edu/",
+    "category": "Protein models",
+    "description": "Database of comparative protein structure models generated by homology modeling.",
+    "keywords": ["ModBase", "comparative modeling", "homology modeling", "protein structure", "3D model", "protein model", "template", "UCSF"]        
+  },
+  {
+    "id": "simap",
+    "name": "SIMAP",
+    "url": "https://www.simap.eu/",
+    "category": "Protein similarity",
+    "description": "Database of precomputed protein sequence similarities generated using FASTA-based comparisons.",
+    "keywords": ["SIMAP", "protein similarity", "sequence similarity", "FASTA", "protein sequence", "homology", "similarity search", "precomputed alignment"]     
+  },
+  {
+    "id": "swiss_model",
+    "name": "Swiss-model",
+    "url": "https://swissmodel.expasy.org/",
+    "category": "Protein models",
+    "description": "Web-based protein structure homology-modeling service and repository of predicted protein structures.",
+    "keywords": ["SWISS-MODEL", "Swiss-model", "protein structure", "homology modeling", "comparative modeling", "3D model", "protein prediction", "template", "structure prediction"]  
+  },
+  {
+    "id": "aaindex",
+    "name": "AAindex",
+    "url": "https://www.genome.jp/aaindex/",
+    "category": "Protein analysis",
+    "description": "Collection of numerical amino-acid properties, substitution matrices, and residue contact potentials.",
+    "keywords": ["AAindex", "amino acid index", "amino acid properties", "mutation matrix", "substitution matrix", "contact potential", "protein sequence", "physicochemical properties", "residue"]  
+  },
+  {
+    "id": "biogrid",
+    "name": "BioGRID",
+    "url": "https://thebiogrid.org/",
+    "category": "Molecular interactions",
+    "description": "Curated repository of protein, genetic, and chemical interaction datasets from published studies.",
+    "keywords": ["BioGRID", "protein interaction", "genetic interaction", "chemical interaction", "PPI", "interaction network", "molecular interaction", "curated", "systems biology"]  
+  },
+  {
+    "id": "rna_binding_protein_database",
+    "name": "RNA-binding protein database",
+    "url": "https://rbpdb.ccbr.utoronto.ca/",
+    "category": "Molecular interactions",
+    "description": "Resource cataloguing RNA-binding proteins and their RNA-binding interactions and motifs.",
+    "keywords": ["RNA-binding protein database", "RBP", "RNA binding", "RNA-protein interaction", "RBP motif", "RNA motif", "protein interaction", "post-transcriptional regulation"]  
+  },
+  {
+    "id": "dip",
+    "name": "Database of Interacting Proteins",
+    "url": "https://dip.doe-mbi.ucla.edu/",
+    "category": "Molecular interactions",
+    "description": "Database of experimentally determined protein-protein interactions and interaction networks.",
+    "keywords": ["DIP", "Database of Interacting Proteins", "protein-protein interaction", "PPI", "protein interaction", "interaction network", "molecular interaction", "experimental interaction"]  
+  },
+  {
+    "id": "intact",
+    "name": "IntAct",
+    "url": "https://www.ebi.ac.uk/intact/",
+    "category": "Molecular interactions",
+    "description": "Open-source database of experimentally supported molecular interactions with evidence and publication annotations.",
+    "keywords": ["IntAct", "molecular interaction", "protein-protein interaction", "PPI", "interaction", "experimental evidence", "EMBL-EBI", "interaction network"]  
+  },
+  {
+    "id": "string",
+    "name": "String",
+    "url": "https://string-db.org/",
+    "category": "Molecular interactions",
+    "description": "Protein association network database integrating experimental and computational evidence for functional protein relationships.",
+    "keywords": ["STRING", "protein interaction", "protein association", "PPI", "functional association", "interaction network", "gene network", "coexpression", "experimental evidence", "text mining"]  
+  },
+  {
+    "id": "protein_model_portal",
+    "name": "ProteinModelPortal",
+    "url": "https://www.proteinmodelportal.org/",
+    "category": "3D protein structures",
+    "description": "Portal integrating information about experimentally determined and computationally modeled protein structures.",
+    "keywords": ["ProteinModelPortal", "protein model", "3D structure", "protein structure", "homology model", "comparative model", "structural biology", "PSI", "model repository"]  
+  },
+  {
+    "id": "swiss_model_repository",
+    "name": "SWISS-MODEL Repository",
+    "url": "https://swissmodel.expasy.org/repository/",
+    "category": "3D protein structures",
+    "description": "Repository of annotated predicted three-dimensional protein structure models.",
+    "keywords": ["SWISS-MODEL Repository", "protein model", "3D structure", "homology model", "protein structure", "predicted structure", "annotated model", "structure repository"]  
+  },
+  {
+    "id": "disprot",
+    "name": "DisProt",
+    "url": "https://www.disprot.org/",
+    "category": "Protein disorder",
+    "description": "Curated database of experimentally supported intrinsically disordered protein regions and their functional evidence.",
+    "keywords": ["DisProt", "protein disorder", "intrinsically disordered protein", "IDP", "intrinsically disordered region", "IDR", "protein function", "disorder annotation", "experimental evidence"]     
+  },
+  {
+    "id": "mobidb",
+    "name": "MobiDB",
+    "url": "https://mobidb.org/",
+    "category": "Protein disorder",
+    "description": "Database integrating annotations and predictions of intrinsically disordered and mobile protein regions.",
+    "keywords": ["MobiDB", "intrinsically disordered", "protein disorder", "IDP", "IDR", "disorder prediction", "protein sequence", "mobile regions", "protein flexibility"]  
+  },
+  {
+    "id": "pdbsum",
+    "name": "PDBsum",
+    "url": "https://www.ebi.ac.uk/thornton-srv/databases/pdbsum/",
+    "category": "3D protein structures",
+    "description": "Graphical database summarizing structures, interactions, ligands, and other annotations for Protein Data Bank entries.",
+    "keywords": ["PDBsum", "PDB", "protein structure", "3D structure", "protein-ligand interaction", "protein-protein interaction", "structure summary", "binding site", "secondary structure"]  
+  },
+  {
+    "id": "ccds",
+    "name": "CCDS",
+    "url": "https://www.ncbi.nlm.nih.gov/CCDS/",
+    "category": "Sequence databases",
+    "description": "Consensus coding sequence set providing stable, high-confidence protein-coding gene annotations shared across major genome annotation projects.",
+    "keywords": ["CCDS", "Consensus CDS", "coding sequence", "protein coding", "gene annotation", "human", "mouse", "reference annotation", "transcript", "protein"]     
+  },
+  {
+    "id": "uniprotkb",
+    "name": "UniProtKB",
+    "url": "https://www.uniprot.org/",
+    "category": "Protein sequence",
+    "description": "Comprehensive protein knowledgebase providing sequence, functional, structural, and biological annotations.",
+    "keywords": ["UniProtKB", "UniProt", "protein sequence", "protein annotation", "function", "domain", "isoform", "PTM", "enzyme", "accession", "protein family"]  
+  },
+  {
+    "id": "swiss_prot_uniprot",
+    "name": "Swiss Prot/Uni Prot",
+    "url": "https://www.uniprot.org/",
+    "category": "Protein sequence",
+    "description": "Combined Swiss-Prot and UniProt resource for curated protein sequence and functional annotation.",
+    "keywords": ["Swiss Prot", "Uni Prot", "Swiss-Prot", "UniProt", "protein sequence", "protein annotation", "curated protein", "function", "variant", "isoform", "PTM"]  
+  },
+  {
+    "id": "worldwide_protein_data_bank",
+    "name": "Worldwide Protein Data Bank",
+    "url": "https://www.wwpdb.org/",
+    "category": "Protein structure",
+    "description": "International collaboration maintaining the global archive of macromolecular structural data in the Protein Data Bank.",
+    "keywords": ["wwPDB", "Worldwide Protein Data Bank", "PDB", "protein structure", "macromolecular structure", "RCSB", "PDBe", "PDBj", "structural biology"]  
+  },
+  {
+    "id": "nci_nature_pathway_interaction_database",
+    "name": "NCI-Nature Pathway Interaction Database",
+    "url": "https://pid.nci.nih.gov/",
+    "category": "Signal transduction pathways",
+    "description": "Curated database of molecular interactions and signaling pathways relevant to human biology and cancer.",
+    "keywords": ["NCI-Nature Pathway Interaction Database", "NCI PID", "pathway", "signaling", "signal transduction", "molecular interaction", "cancer", "gene regulation", "protein interaction"]  
+  },
+  {
+    "id": "netpath",
+    "name": "Netpath",
+    "url": "https://www.netpath.org/",
+    "category": "Signal transduction pathways",
+    "description": "Curated resource of experimentally supported human signal transduction pathways.",
+    "keywords": ["NetPath", "signal transduction", "signaling pathway", "human", "protein", "phosphorylation", "EGFR", "insulin", "TGF-beta", "pathway", "signaling"]     
+  },
+  {
+    "id": "reactome",
+    "name": "Reactome",
+    "url": "https://reactome.org/",
+    "category": "Pathways",
+    "description": "Curated, navigable knowledgebase of biological pathways, reactions, and molecular events.",
+    "keywords": ["Reactome", "pathway", "biological pathway", "metabolic pathway", "signal transduction", "reaction", "gene", "protein", "human", "pathway enrichment", "systems biology"]  
+  },
+  {
+    "id": "wikipathways",
+    "name": "WikiPathways",
+    "url": "https://www.wikipathways.org/",
+    "category": "Pathways",
+    "description": "Open collaborative database of biological pathway diagrams and pathway-associated genes, proteins, and metabolites.",
+    "keywords": ["WikiPathways", "pathway", "biological pathway", "gene", "protein", "metabolite", "pathway diagram", "pathway enrichment", "systems biology", "curated pathway"]  
+  },
+  {
+    "id": "biocyc",
+    "name": "BioCyc Database Collection",
+    "url": "https://biocyc.org/",
+    "category": "Metabolic pathways",
+    "description": "Collection of organism-specific pathway and genome databases integrating metabolic pathways, genes, enzymes, and reactions.",
+    "keywords": ["BioCyc", "metabolic pathway", "pathway database", "genome", "gene", "enzyme", "reaction", "metabolism"]       
+  },
+  {
+    "id": "ecocyc",
+    "name": "EcoCyc",
+    "url": "https://ecocyc.org/",
+    "category": "Metabolic pathways",
+    "description": "Comprehensive database of the genome, genes, proteins, and metabolic pathways of Escherichia coli.",
+    "keywords": ["EcoCyc", "E coli", "Escherichia coli", "metabolic pathway", "gene", "protein", "enzyme", "operon", "regulation", "metabolism"]  
+  },
+  {
+    "id": "metacyc",
+    "name": "MetaCyc",
+    "url": "https://metacyc.org/",
+    "category": "Metabolic pathways",
+    "description": "Reference database of experimentally elucidated metabolic pathways and reactions across organisms.",
+    "keywords": ["MetaCyc", "metabolic pathways", "metabolism", "biochemical reaction", "enzyme", "pathway", "organism", "metabolic network", "pathway prediction"]     
+  },
+  {
+    "id": "brenda",
+    "name": "BRENDA",
+    "url": "https://www.brenda-enzymes.org/",
+    "category": "Enzyme databases",
+    "description": "Comprehensive enzyme information system containing enzyme activities, kinetics, substrates, inhibitors, and organism data.",
+    "keywords": ["BRENDA", "enzyme", "enzyme database", "enzyme activity", "kinetics", "Km", "Vmax", "substrate", "inhibitor", "EC number", "catalysis"]  
+  },
+  {
+    "id": "hmdb",
+    "name": "HMDB",
+    "url": "https://hmdb.ca/",
+    "category": "Metabolomics",
+    "description": "Comprehensive resource containing chemical, clinical, biological, and metabolic information about human metabolites.",
+    "keywords": ["HMDB", "Human Metabolome Database", "metabolite", "metabolomics", "small molecule", "human metabolite", "metabolism", "biomarker", "NMR", "mass spectrometry", "metabolic disease"]  
+  },
+  {
+    "id": "kegg_pathway",
+    "name": "KEGG PATHWAY Database",
+    "url": "https://www.genome.jp/kegg/pathway.html",
+    "category": "Metabolic pathways",
+    "description": "Curated pathway maps connecting genes, proteins, metabolites, and reactions across biological systems.",
+    "keywords": ["KEGG", "KEGG PATHWAY", "pathway", "metabolism", "gene", "protein", "enzyme", "metabolite", "reaction", "pathway enrichment", "systems biology"]  
+  },
+  {
+    "id": "manet",
+    "name": "MANET database",
+    "url": "https://manet.illinois.edu/",
+    "category": "Metabolic evolution",
+    "description": "Comparative database for analyzing metabolic networks and their evolution across organisms.",
+    "keywords": ["MANET", "metabolic network", "metabolism", "comparative genomics", "metabolic evolution", "pathway", "enzyme", "gene", "network"]     
+  },
+  {
+    "id": "sabiork",
+    "name": "SABIO-RK",
+    "url": "https://sabiork.h-its.org/",
+    "category": "Biochemical reactions and kinetics",
+    "description": "Database of biochemical reactions and experimentally measured kinetic properties.",
+    "keywords": ["SABIO-RK", "biochemical reaction", "reaction kinetics", "enzyme kinetics", "Km", "Vmax", "rate constant", "metabolism", "reaction data"]      
+  },
+  {
+    "id": "bacdive",
+    "name": "BacDive",
+    "url": "https://bacdive.de/",
+    "category": "Taxonomic databases",
+    "description": "Strain-level database of bacterial and archaeal taxonomy, phenotypes, physiology, environmental metadata, and sequence information.",
+    "keywords": ["BacDive", "Bacterial Diversity Database", "bacteria", "archaea", "strain", "taxonomy", "phenotype", "morphology", "physiology", "metabolism", "environment", "sequence"]  
+  },
+  {
+    "id": "catalogue_of_life",
+    "name": "Catalogue of Life",
+    "url": "https://www.catalogueoflife.org/",
+    "category": "Taxonomic databases",
+    "description": "Global species catalogue integrating taxonomic names and information from specialized biodiversity databases.",
+    "keywords": ["Catalogue of Life", "species", "taxonomy", "biodiversity", "species names", "classification", "organism", "global species database", "taxon"]  
+  },
+  {
+    "id": "eztaxon_e",
+    "name": "EzTaxon-e",
+    "url": "https://eztaxon-e.ezbiocloud.net/",
+    "category": "Taxonomic databases",
+    "description": "Database for identification and classification of prokaryotes using 16S rRNA gene sequences.",
+    "keywords": ["EzTaxon-e", "16S rRNA", "bacterial identification", "prokaryote", "taxonomy", "species identification", "sequence", "phylogeny", "bacteria", "archaea"]  
+  },
+  {
+    "id": "ncbi_taxonomy",
+    "name": "NCBI Taxonomy",
+    "url": "https://www.ncbi.nlm.nih.gov/taxonomy",
+    "category": "Taxonomic databases",
+    "description": "Taxonomic classification resource covering organisms represented in NCBI sequence databases.",
+    "keywords": ["NCBI Taxonomy", "taxonomy", "taxon", "organism", "species", "genus", "bacteria", "archaea", "eukaryote", "classification", "NCBI"]  
+  },
+  {
+    "id": "allen_brain_atlas",
+    "name": "Allen Brain Atlas",
+    "url": "https://portal.brain-map.org/",
+    "category": "Biological image databases",
+    "description": "Atlas of brain anatomy, gene expression, cell types, and spatial molecular data across model organisms and humans.",
+    "keywords": ["Allen Brain Atlas", "brain atlas", "neuroscience", "brain", "gene expression", "spatial expression", "neuroanatomy", "cell type", "mouse brain", "human brain"]  
+  },
+  {
+    "id": "digital_brain_bank",
+    "name": "Digital Brain Bank",
+    "url": "https://digitalbrainbank.org/",
+    "category": "Biological image databases",
+    "description": "Open platform providing access to post-mortem brain imaging datasets for neuroscience research.",
+    "keywords": ["Digital Brain Bank", "brain imaging", "post-mortem", "neuroimaging", "brain", "MRI", "neuroscience", "neuroimaging", "brain", "MRI", "neuroscience"]  
+  },
+  {
+    "id": "empiar",
+    "name": "Electron Microscopy Public Image Archive (EMPIAR)",
+    "url": "https://www.ebi.ac.uk/empiar/",
+    "category": "Biological image databases",
+    "description": "Public archive of raw electron microscopy image data supporting structural and cellular biology research.",
+    "keywords": ["EMPIAR", "Electron Microscopy Public Image Archive", "electron microscopy", "cryo-EM", "raw images", "microscopy", "structural biology", "image archive", "EM data"]  
+  },
+  {
+    "id": "flyexpress",
+    "name": "FlyExpress",
+    "url": "https://www.flyexpress.net/",
+    "category": "Biological image databases",
+    "description": "Database of spatial gene expression images for developmental studies in Drosophila embryos.",
+    "keywords": ["FlyExpress", "Drosophila", "gene expression", "embryo", "development", "spatial expression", "in situ", "image database", "fruit fly"]  
+  },
+  {
+    "id": "image_data_resource",
+    "name": "Image Data Resource",
+    "url": "https://idr.openmicroscopy.org/",
+    "category": "Biological image databases",
+    "description": "Public repository and analysis platform for biological microscopy image datasets.",
+    "keywords": ["Image Data Resource", "IDR", "bioimage", "microscopy", "image dataset", "cell imaging", "image analysis", "OMERO", "phenotyping"]  
+  },
+  {
+    "id": "morphobank",
+    "name": "Morphobank",
+    "url": "https://morphobank.org/",
+    "category": "Biological image databases",
+    "description": "Collaborative platform for storing, analyzing, and sharing morphological character and image data for evolutionary research.",
+    "keywords": ["MorphoBank", "morphology", "morphological data", "evolution", "phylogenetics", "character matrix", "specimen", "image", "comparative biology"]  
+  },
+  {
+    "id": "morphosource",
+    "name": "Morphosource",
+    "url": "https://www.morphosource.org/",
+    "category": "Biological image databases",
+    "description": "Repository for digital 3D specimen data and associated biodiversity and morphological research information.",
+    "keywords": ["MorphoSource", "3D specimen", "morphology", "biodiversity", "CT scan", "3D imaging", "specimen", "evolution", "digital morphology"]  
+  },
+  {
+    "id": "tcia",
+    "name": "The Cancer Imaging Archive (TCIA)",
+    "url": "https://www.cancerimagingarchive.net/",
+    "category": "Radiologic databases",
+    "description": "Public archive of de-identified cancer medical imaging data linked to clinical and genomic information.",
+    "keywords": ["TCIA", "The Cancer Imaging Archive", "cancer imaging", "medical imaging", "CT", "MRI", "PET", "radiology", "tumor", "oncology", "imaging dataset"]  
+  },
+  {
+    "id": "nitrch",
+    "name": "Neuroimaging Informatics Tools and Resources Clearinghouse",
+    "url": "https://www.nitrc.org/",
+    "category": "Radiologic databases",
+    "description": "Portal for discovering neuroimaging software, databases, tools, and imaging datasets.",
+    "keywords": ["NITRC", "neuroimaging", "MRI", "fMRI", "brain imaging", "neuroinformatics", "software", "tools", "datasets", "imaging resources"]  
+  },
+  {
+    "id": "exocarta",
+    "name": "ExoCarta",
+    "url": "https://exocarta.org/",
+    "category": "Exosomal databases",
+    "description": "Database of extracellular vesicle and exosome cargo including proteins, RNAs, lipids, and associated studies.",
+    "keywords": ["ExoCarta", "exosome", "extracellular vesicle", "EV", "exosomal protein", "RNA", "miRNA", "lipid", "cargo", "extracellular vesicle"]  
+  },
+  {
+    "id": "extracellular_rna_atlas",
+    "name": "Extracellular RNA Atlas",
+    "url": "https://exrna-atlas.org/",
+    "category": "Exosomal databases",
+    "description": "Repository of extracellular RNA profiles generated from small RNA sequencing and qPCR studies of biofluids.",
+    "keywords": ["Extracellular RNA Atlas", "exRNA", "extracellular RNA", "small RNA-seq", "qPCR", "biofluid", "plasma", "serum", "RNA", "extracellular vesicle"]  
+  },
+  {
+    "id": "biomodels",
+    "name": "BioModels Database",
+    "url": "https://www.ebi.ac.uk/biomodels/",
+    "category": "Mathematical model databases",
+    "description": "Repository of published computational and mathematical models describing biological systems and processes.",
+    "keywords": ["BioModels", "BioModels Database", "mathematical model", "computational model", "systems biology", "SBML", "biological model", "simulation", "pathway", "kinetics"]  
+  },
+  {
+    "id": "morpheusml",
+    "name": "MorpheusML Model Repository",
+    "url": "https://morpheus.gitlab.io/",
+    "category": "Mathematical model databases",
+    "description": "Repository of community-contributed and educational multiscale and multicellular systems biology models.",
+    "keywords": ["MorpheusML", "Morpheus", "model repository", "multiscale model", "multicellular model", "systems biology", "simulation", "cellular model", "mathematical modeling"]  
+  },
+  {
+    "id": "cipars",
+    "name": "CIPARS",
+    "url": "https://www.canada.ca/en/public-health/services/surveillance/canadian-integrated-program-antimicrobial-resistance-surveillance.html",
+    "category": "Antimicrobial resistance rates and antibiotic consumption",
+    "description": "Canadian surveillance program tracking antimicrobial resistance and antimicrobial use in humans, animals, and food sources.",
+    "keywords": ["CIPARS", "Canadian Integrated Program for Antimicrobial Resistance Surveillance", "antimicrobial resistance", "AMR", "antibiotic resistance", "antibiotic use", "surveillance", "Canada"]  
+  },
+  {
+    "id": "ears_net",
+    "name": "EARS-Net",
+    "url": "https://www.ecdc.europa.eu/en/antimicrobial-resistance/surveillance-and-disease-data/data-ecdc",
+    "category": "Antimicrobial resistance rates and antibiotic consumption",
+    "description": "European surveillance network collecting antimicrobial resistance data from invasive bacterial isolates.",
+    "keywords": ["EARS-Net", "European Antimicrobial Resistance Surveillance Network", "AMR", "antimicrobial resistance", "antibiotic resistance", "Europe", "surveillance", "bacteria", "clinical isolates"]       
+  },
+  {
+    "id": "esac_net",
+    "name": "ESAC-Net",
+    "url": "https://www.ecdc.europa.eu/en/antimicrobial-consumption/surveillance-and-disease-data",
+    "category": "Antimicrobial resistance rates and antibiotic consumption",
+    "description": "European surveillance network monitoring antimicrobial consumption in human populations.",
+    "keywords": ["ESAC-Net", "European Surveillance of Antimicrobial Consumption", "antimicrobial consumption", "antibiotic consumption", "Europe", "surveillance", "antibiotic use", "ESAC", "ECDC"]     
+  },
+  {
+    "id": "amrfinderplus",
+    "name": "AMRFinderPlus",
+    "url": "https://www.ncbi.nlm.nih.gov/pathogens/antimicrobial-resistance/AMRFinder/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "NCBI resource for identifying antimicrobial resistance genes, resistance-associated mutations, stress-response genes, and virulence genes.",
+    "keywords": ["AMRFinderPlus", "AMRFinder", "antimicrobial resistance", "AMR", "resistance gene", "ARG", "point mutation", "virulence gene", "stress response", "HMM", "NCBI"]  
+  },
+  {
+    "id": "amdd",
+    "name": "Antimicrobial Drug Database (AMDD)",
+    "url": "https://www.bioinformatics.org/antimicrobial/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Resource describing antimicrobial drugs, their targets, mechanisms, and resistance-related information.",
+    "keywords": ["AMDD", "Antimicrobial Drug Database", "antimicrobial drug", "antibiotic", "drug target", "resistance", "mechanism", "bacteria", "antimicrobial"]  
+  },
+  {
+    "id": "ardb",
+    "name": "ARDB",
+    "url": "https://ardb.cbcb.umd.edu/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Historical database of antibiotic resistance genes and associated resistance information.",
+    "keywords": ["ARDB", "Antibiotic Resistance Genes Database", "antibiotic resistance", "ARG", "resistance gene", "antibiotic", "bacteria", "resistome"]  
+  },
+  {
+    "id": "argminer",
+    "name": "ARGminer",
+    "url": "http://bench.cs.vt.edu/argminer",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Crowdsourced curation platform for antibiotic resistance genes aggregated from multiple resistance databases and genomic resources.",
+    "keywords": ["ARGminer", "antibiotic resistance genes", "ARG", "AMR", "crowdsourcing", "resistance gene curation", "CARD", "ResFinder", "SARG", "PATRIC", "mobile genetic element"]  
+  },
+  {
+    "id": "bacmet",
+    "name": "BacMet",
+    "url": "https://bacmet.biomedicine.gu.se/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Database of experimentally characterized and predicted bacterial genes conferring resistance to biocides, metals, and antibiotics.",
+    "keywords": ["BacMet", "biocide resistance", "metal resistance", "antibiotic resistance", "AMR", "resistance genes", "bacteria", "heavy metal", "biocide", "gene"]  
+  },
+  {
+    "id": "blad",
+    "name": "Beta-Lactamase Database (BLAD)",
+    "url": "https://www.ncbi.nlm.nih.gov/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Database focused on beta-lactamase enzymes and genes responsible for beta-lactam antibiotic resistance.",
+    "keywords": ["BLAD", "Beta-Lactamase Database", "beta-lactamase", "beta lactam", "antibiotic resistance", "AMR", "penicillin", "cephalosporin", "carbapenem", "resistance gene"]  
+  },
+  {
+    "id": "cbmar",
+    "name": "CBMAR",
+    "url": "https://www.cbmar.org/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Resource for bacterial antimicrobial resistance genes and related resistance mechanisms.",
+    "keywords": ["CBMAR", "antimicrobial resistance", "AMR", "resistance gene", "antibiotic resistance", "bacteria", "ARG", "resistome"]  
+  },
+  {
+    "id": "card",
+    "name": "The Comprehensive Antibiotic Resistance Database",
+    "url": "https://card.mcmaster.ca/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Curated resource of antibiotic resistance genes, mutations, mechanisms, and drug-resistance relationships.",
+    "keywords": ["CARD", "Comprehensive Antibiotic Resistance Database", "antibiotic resistance", "AMR", "ARG", "resistance gene", "resistance mechanism", "mutation", "antibiotic", "resistance gene", "resistome"]  
+  },
+  {
+    "id": "farme",
+    "name": "FARME",
+    "url": "http://staff.washington.edu/jwallace/FARME/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Functional antibiotic resistance metagenomic element database for resistance determinants identified in metagenomic data.",
+    "keywords": ["FARME", "Functional Antibiotic Resistance Metagenomic Elements", "metagenomics", "antibiotic resistance", "AMR", "ARG", "resistome", "metagenomic sequence", "resistance gene"]       
+  },
+  {
+    "id": "integrall",
+    "name": "INTEGRALL",
+    "url": "https://integrall.bio.ua.pt/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Database of integrons and their gene cassettes, particularly those associated with antimicrobial resistance.",
+    "keywords": ["INTEGRALL", "integron", "gene cassette", "antibiotic resistance", "AMR", "mobile genetic element", "MGE", "integrase", "resistance gene", "bacteria"]  
+  },
+  {
+    "id": "laced",
+    "name": "LacED",
+    "url": "https://laced.bioinformatics.nl/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Resource for lactose-fermenting Enterobacterales and associated antimicrobial resistance information.",
+    "keywords": ["LacED", "lactose fermenting Enterobacterales", "Enterobacterales", "antimicrobial resistance", "AMR", "antibiotic resistance", "bacteria", "resistance genes"]  
+  },
+  {
+    "id": "megares",
+    "name": "MEGARes",
+    "url": "https://megares.meglab.org/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Curated database of antimicrobial resistance genes and genetic determinants designed for metagenomic resistome analysis.",
+    "keywords": ["MEGARes", "antimicrobial resistance", "AMR", "resistome", "metagenomics", "ARG", "resistance gene", "gene ontology", "metagenomic classification"]  
+  },
+  {
+    "id": "mubii_tb_db",
+    "name": "MUBII-TB-DB",
+    "url": "https://umr5558-bibiserv.univ-lyon1.fr/mubii/mubii-select.cgi",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Database of mutations associated with antibiotic resistance in Mycobacterium tuberculosis.",
+    "keywords": ["MUBII-TB-DB", "tuberculosis", "Mycobacterium tuberculosis", "TB", "antibiotic resistance", "AMR", "resistance mutation", "rpoB", "pncA", "katG", "gyrA"]  
+  },
+  {
+    "id": "mustard",
+    "name": "Mustard Database",
+    "url": "http://mgps.eu/Mustard/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Database of antimicrobial resistance determinants curated from metagenomic and protein-homology evidence.",
+    "keywords": ["Mustard Database", "Mustard", "antimicrobial resistance determinants", "ARD", "AMR", "metagenomics", "resistance gene", "human gut microbiota", "protein homology", "resistome"]        
+  },
+  {
+    "id": "mvirdb",
+    "name": "MvirDB",
+    "url": "https://mvirdb.llnl.gov/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Integrated database of microbial virulence factors, resistance genes, and related microbial functional determinants.",
+    "keywords": ["MvirDB", "microbial virulence", "virulence factor", "antibiotic resistance", "AMR", "resistance gene", "pathogenicity", "microbial genes", "bacteria", "virus"]           
+  },
+  {
+    "id": "pathophenodb",
+    "name": "PathoPhenoDB",
+    "url": "https://pathophenodb.org/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Resource linking pathogen genotypes with phenotypes and clinically relevant antimicrobial resistance information.",
+    "keywords": ["PathoPhenoDB", "pathogen", "phenotype", "genotype", "antimicrobial resistance", "AMR", "resistance", "bacteria", "clinical phenotype", "virulence"]           
+  },
+  {
+    "id": "patric",
+    "name": "PATRIC database",
+    "url": "https://www.patricbrc.org/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Integrated bacterial bioinformatics resource combining genomes, annotations, comparative genomics, pathways, and antibiotic resistance data.",
+    "keywords": ["PATRIC", "PATRIC database", "bacteria", "genome", "comparative genomics", "antibiotic resistance", "AMR", "pathogen", "gene", "protein", "pathways"]  
+  },
+  {
+    "id": "rac",
+    "name": "RAC: Repository of Antibiotic resistance Cassettes",
+    "url": "https://rac.bioinfo.cnio.es/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Repository cataloguing antibiotic resistance gene cassettes and their associated genetic contexts.",
+    "keywords": ["RAC", "Repository of Antibiotic resistance Cassettes", "antibiotic resistance", "resistance cassette", "gene cassette", "ARG", "mobile genetic element", "integron", "bacteria"]  
+  },
+  {
+    "id": "resfinder",
+    "name": "ResFinder",
+    "url": "https://cge.food.dtu.dk/services/ResFinder/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Database and analysis resource for identifying acquired antimicrobial resistance genes in bacterial genomes and sequence data.",
+    "keywords": ["ResFinder", "antimicrobial resistance", "AMR", "resistance gene", "ARG", "bacterial genome", "sequence", "antibiotic resistance", "DTU", "acquired resistance"]  
+  },
+  {
+    "id": "tbdreamdb",
+    "name": "TBDReaMDB",
+    "url": "https://www.tbdreamdb.igib.res.in/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Database of tuberculosis drug-resistance mutations and associated drug-response information.",
+    "keywords": ["TBDReaMDB", "tuberculosis", "TB", "Mycobacterium tuberculosis", "drug resistance", "antibiotic resistance", "mutation", "drug response", "SNP", "resistance mutation"]  
+  },
+  {
+    "id": "u_care",
+    "name": "u-CARE",
+    "url": "http://www.e-bioinformatics.net/ucare",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Curated repository of multidrug-resistant Escherichia coli genes, mutations, antibiotics, and resistance mechanisms.",
+    "keywords": ["u-CARE", "user-friendly Comprehensive Antibiotic resistance Repository of Escherichia coli", "E coli", "Escherichia coli", "antibiotic resistance", "AMR", "multidrug resistance", "ARG", "SNP", "antibiotic"]  
+  },
+  {
+    "id": "vfdb",
+    "name": "VFDB",
+    "url": "https://www.mgc.ac.cn/VFs/",
+    "category": "Antimicrobial resistance mechanisms",
+    "description": "Comprehensive database of bacterial virulence factors and genes associated with pathogenicity.",
+    "keywords": ["VFDB", "Virulence Factor Database", "virulence factor", "virulence gene", "pathogenicity", "bacteria", "pathogen", "infection", "host interaction", "virulence"]  
+  },
+  {
+    "id": "gene_wiki",
+    "name": "Gene Wiki",
+    "url": "https://en.wikipedia.org/wiki/Gene_Wiki",
+    "category": "Wiki-style databases",
+    "description": "Wiki-based collection of gene-focused pages linking genes to biological functions and scientific literature.",
+    "keywords": ["Gene Wiki", "gene", "genes", "gene function", "gene annotation", "biological function", "literature", "Wikipedia", "human genes"]  
+  },
+  {
+    "id": "wikispecies",
+    "name": "WikiSpecies",
+    "url": "https://species.wikimedia.org/",
+    "category": "Wiki-style databases",
+    "description": "Wikimedia knowledgebase of taxonomic information and species classification.",
+    "keywords": ["WikiSpecies", "species", "taxonomy", "taxon", "classification", "biodiversity", "organism", "Wikimedia", "scientific name"]     
+  },
+  {
+    "id": "wikiprofessional",
+    "name": "WikiProfessional",
+    "url": "https://en.wikipedia.org/wiki/Wikipedia:WikiProject_Biotechnology",
+    "category": "Wiki-style databases",
+    "description": "Wiki-style professional knowledge resource for biological and biomedical information.",
+    "keywords": ["WikiProfessional", "wiki", "professional knowledge", "biology", "biomedical", "life sciences", "knowledgebase"]     
+  },
+  {
+    "id": "bold",
+    "name": "Barcode of Life Data Systems",
+    "url": "https://www.boldsystems.org/",
+    "category": "DNA barcoding",
+    "description": "Database and analysis platform for DNA barcode sequences and specimen metadata used in species identification and biodiversity studies.",
+    "keywords": ["BOLD", "Barcode of Life Data Systems", "DNA barcode", "DNA barcoding", "species identification", "COI", "cytochrome c oxidase", "biodiversity", "taxonomy", "specimen"]  
+  },
+  {
+    "id": "bacterial_pesticidal_protein_database",
+    "name": "Bacterial Pesticidal Protein Database",
+    "url": "https://www.bpprc.org/",
+    "category": "Specialized databases",
+    "description": "Resource for classification, nomenclature, sequences, and structural information on bacterial pesticidal proteins.",
+    "keywords": ["Bacterial Pesticidal Protein Database", "BPPRC", "pesticidal protein", "Bacillus thuringiensis", "Bt toxin", "insecticidal protein", "Cry", "Vip", "bacterial toxin", "pesticide"]      
+  },
+  {
+    "id": "tcga",
+    "name": "The Cancer Genome Atlas",
+    "url": "https://www.cancer.gov/ccg/research/genome-sequencing/tcga",
+    "category": "Cancer genomics",
+    "description": "Large-scale cancer genomics resource containing molecular profiles and clinical data across many tumor types.",
+    "keywords": ["TCGA", "The Cancer Genome Atlas", "cancer genomics", "tumor", "RNA expression", "copy number", "SNP", "DNA methylation", "microRNA", "exome sequencing", "cancer"]  
+  },
+  {
+    "id": "cellosaurus",
+    "name": "Cellosaurus",
+    "url": "https://www.cellosaurus.org/",
+    "category": "Cell line databases",
+    "description": "Knowledge resource providing standardized information about cell lines, their origins, characteristics, and identifiers.",
+    "keywords": ["Cellosaurus", "cell line", "cell culture", "cell model", "cancer cell line", "authentication", "cell identity", "species", "disease", "cell line ontology"]  
+  },
+  {
+    "id": "ctd",
+    "name": "CTD (Comparative Toxicogenomics Database)",
+    "url": "https://ctdbase.org/",
+    "category": "Toxicogenomics",
+    "description": "Curated resource describing relationships among chemicals, genes, diseases, exposures, and biological effects.",
+    "keywords": ["CTD", "Comparative Toxicogenomics Database", "toxicogenomics", "chemical", "gene", "disease", "chemical-gene interaction", "drug", "exposure", "phenotype"]   
+  },
+  {
+    "id": "diprodb",
+    "name": "DiProDB",
+    "url": "https://diprodb.fli-leibniz.de/",
+    "category": "DNA/RNA sequence properties",
+    "description": "Database for thermodynamic, structural, and other dinucleotide properties of nucleic acid sequences.",
+    "keywords": ["DiProDB", "dinucleotide properties", "DNA", "RNA", "thermodynamic properties", "structural properties", "sequence analysis", "dinucleotide", "DNA structure"]  
+  },
+  {
+    "id": "hrt_atlas",
+    "name": "Housekeeping and Reference Transcript Atlas (HRT Atlas)",
+    "url": "https://www.housekeeping.unicamp.br/",
+    "category": "Gene expression",
+    "description": "Resource for identifying human and mouse housekeeping genes and candidate reference transcripts for qPCR normalization.",
+    "keywords": ["HRT Atlas", "Housekeeping and Reference Transcript Atlas", "housekeeping genes", "reference genes", "qPCR", "RT-qPCR", "normalization", "RNA-seq", "transcript", "gene expression"]  
+  },
+  {
+    "id": "dryad",
+    "name": "Dryad",
+    "url": "https://datadryad.org/",
+    "category": "Scientific data repositories",
+    "description": "Open repository for datasets underlying scientific publications across the biological and applied sciences.",
+    "keywords": ["Dryad", "research data", "scientific data", "dataset", "data repository", "biological data", "publication", "open data", "data sharing"]      
+  },
+  {
+    "id": "edinburgh_mouse_atlas",
+    "name": "Edinburgh Mouse Atlas",
+    "url": "https://www.emouseatlas.org/",
+    "category": "Developmental biology",
+    "description": "Atlas and database of mouse embryonic development, anatomy, gene expression, and three-dimensional anatomical information.",
+    "keywords": ["Edinburgh Mouse Atlas", "mouse atlas", "mouse embryo", "development", "embryology", "anatomy", "gene expression", "3D", "mouse development", "mouse anatomy", "mouse gene expression"]      
+  },
+  {
+    "id": "epd",
+    "name": "EPD Eukaryotic Promoter Database",
+    "url": "https://epd.expasy.org/",
+    "category": "Promoter databases",
+    "description": "Curated database of experimentally supported eukaryotic transcription start sites and promoter regions.",
+    "keywords": ["EPD", "Eukaryotic Promoter Database", "promoter", "transcription start site", "TSS", "gene regulation", "transcription", "DNA", "promoter annotation", "eukaryote"]  
+  },
+  {
+    "id": "findbase",
+    "name": "FINDbase",
+    "url": "https://findbase.org/",
+    "category": "Human genetics",
+    "description": "Database of allele frequencies and genetic variants associated with inherited disorders across populations.",
+    "keywords": ["FINDbase", "Frequency of INherited Disorders database", "inherited disorder", "allele frequency", "genetic variation", "population genetics", "mutation", "human genetics", "disease"]  
+  },
+  {
+    "id": "gigadb",
+    "name": "GigaDB",
+    "url": "http://gigadb.org/",
+    "category": "Scientific data repositories",
+    "description": "Repository for large-scale datasets supporting biological and biomedical research publications.",
+    "keywords": ["GigaDB", "large-scale dataset", "biological data", "biomedical data", "genomics", "sequencing", "research data", "data repository", "publication"]      
+  },
+  {
+    "id": "hgnc",
+    "name": "HGNC (HUGO Gene Nomenclature Committee)",
+    "url": "https://www.genenames.org/",
+    "category": "Gene nomenclature",
+    "description": "Authority for standardized approved human gene names, symbols, identifiers, and genomic nomenclature.",
+    "keywords": ["HGNC", "HUGO Gene Nomenclature Committee", "gene nomenclature", "gene symbol", "human gene", "gene identifier", "gene name", "genomics", "standardized names"]      
+  },
+  {
+    "id": "ihec",
+    "name": "International Human Epigenome Consortium",
+    "url": "https://ihec-epigenomes.org/",
+    "category": "Epigenomics",
+    "description": "International consortium integrating reference human epigenome datasets generated by participating national projects.",
+    "keywords": ["IHEC", "International Human Epigenome Consortium", "epigenome", "epigenomics", "DNA methylation", "histone modification", "chromatin", "ENCODE", "epigenetic", "reference epigenome"]  
+  },
+  {
+    "id": "methbase",
+    "name": "MethBase",
+    "url": "https://methbase.org/",
+    "category": "Epigenomics",
+    "description": "Database of DNA methylation data with genomic visualization through genome-browser interfaces.",
+    "keywords": ["MethBase", "DNA methylation", "methylation", "epigenetics", "epigenome", "CpG", "methylome", "UCSC Genome Browser", "genomic methylation"]  
+  },
+  {
+    "id": "minimotif_miner",
+    "name": "Minimotif Miner",
+    "url": "https://minimotifminer.org/",
+    "category": "Protein motifs",
+    "description": "Database for short contiguous functional peptide motifs and their biological annotations.",
+    "keywords": ["Minimotif Miner", "Minimotif", "protein motif", "peptide motif", "short linear motif", "SLiM", "functional motif", "protein interaction", "sequence motif", "PTM"]  
+  },
+  {
+    "id": "oncogenomic_databases",
+    "name": "Oncogenomic databases",
+    "url": "https://www.ncbi.nlm.nih.gov/",
+    "category": "genomics",
+    "description": "Collection of databases and resources used for genomic and molecular cancer research.",
+    "keywords": ["oncogenomics", "cancer genomics", "cancer database","tumor genomics", "cancer genes","mutation", "expression", "copy number", "methylation", "cancer research"]
+  },
+  {
+    "id": "pubmed",
+    "name": "PubMed",
+    "url": "https://pubmed.ncbi.nlm.nih.gov/",
+    "category": "Biomedical literature",
+    "description": "Bibliographic database of biomedical and life-sciences publications, citations, and abstracts.",
+    "keywords": [
+      "PubMed",
+      "biomedical literature",
+      "research papers",
+      "scientific articles",
+      "abstracts",
+      "citations",
+      "life sciences",
+      "medicine",
+      "NCBI",
+      "literature search"
+    ]
+  },
+  {
+    "id": "riken_integrated_database_mammals",
+    "name": "RIKEN integrated database of mammals",
+    "url": "https://www.riken.jp/en/",
+    "category": "Mammalian genomics",
+    "description": "Integrated resource for genomic and biological information on mammalian species and research datasets.",
+    "keywords": [ "RIKEN",
+      "integrated database of mammals",
+      "mammals",
+      "mammalian genomics",
+      "genome",
+      "gene",
+      "mouse",
+      "rat",
+      "comparative genomics"
+    ]
+  },
+  {
+    "id": "tdr_targets",
+    "name": "TDR Targets",
+    "url": "https://tdrtargets.org/",
+    "category": "Drug discovery",
+    "description": "Chemogenomics resource linking tropical disease targets with genes, proteins, compounds, and druggability information.",
+    "keywords": [ "TDR Targets", "drug discovery", "tropical disease", "chemogenomics", "drug target", "protein target", "compound", "drug","parasitology", "target prioritization"]
+  },
+  {
+    "id": "transfac",
+    "name": "TRANSFAC",
+    "url": "https://genexplain.com/transfac/",
+    "category": "Transcription factors",
+    "description": "Database of eukaryotic transcription factors, DNA-binding sites, and transcription factor binding profiles.",
+    "keywords": ["TRANSFAC", "transcription factor", "TF", "DNA binding", "binding site", "transcriptional regulation", "gene regulation", "motif", "PWM", "position weight matrix"]      
+  },
+  {
+    "id": "jaspar",
+    "name": "JASPAR",
+    "url": "https://jaspar.elixir.no/",
+    "category": "Transcription factors",
+    "description": "Open database of curated, non-redundant transcription factor binding profiles represented as position frequency matrices.",
+    "keywords": ["JASPAR", "transcription factor", "TFBS", "binding profile", "position frequency matrix", "PFM", "PWM", "DNA motif", "gene regulation", "transcription"]     
+  },
+  {
+    "id": "metosite",
+    "name": "MetOSite",
+    "url": "https://metosite.uma.es/",
+    "category": "Post-translational modifications",
+    "description": "Database of methionine sulfoxidation sites and their functional roles in proteins.",
+    "keywords": ["MetOSite", "methionine sulfoxidation", "methionine oxidation", "oxidative modification", "PTM", "post-translational modification", "protein", "oxidative stress", "redox"]     
+  },
+  {
+    "id": "healthcare_cost_utilization_project",
+    "name": "Healthcare Cost and Utilization Project",
+    "url": "https://hcup-us.ahrq.gov/",
+    "category": "Clinical databases",
+    "description": "Large US collection of hospital inpatient, outpatient, emergency, utilization, cost, and clinical encounter data.",
+    "keywords": ["HCUP", "Healthcare Cost and Utilization Project", "hospital data", "healthcare utilization", "inpatient", "outpatient", "emergency", "clinical data", "healthcare costs", "US"]  
+  },
+  {
+    "id": "lexas",
+    "name": "LEXAS",
+    "url": "https://lexas.f.u-tokyo.ac.jp/",
+    "category": "Biomedical literature mining",
+    "description": "Resource that curates descriptions of biological experiments extracted from biomedical literature.",
+    "keywords": ["LEXAS", "biological experiments", "literature mining", "PubMed Central", "PMC", "experiment extraction", "text mining", "biomedical literature", "knowledge extraction"]  
+  },
+  {
+    "id": "bovine_metabolome_database",
+    "name": "Bovine Metabolome Database",
+    "url": "https://bovine.nutrition.tamu.edu/",
+    "category": "Metabolomics",
+    "description": "Database of known metabolites detected or reported in cattle and bovine biological systems.",
+    "keywords": ["Bovine Metabolome Database", "bovine metabolome", "cattle", "cow", "metabolite", "metabolomics", "small molecule", "animal metabolism", "biomarker"]  
+  },
+  {
+    "id": "mouse_models_human_cancer",
+    "name": "Mouse Models of Human Cancer database",
+    "url": "https://tumor.informatics.jax.org/mtbwi/index.do",
+    "category": "Cancer models",
+    "description": "Curated database of mouse models used to study human cancers and associated tumor phenotypes and genetics.",
+    "keywords": ["Mouse Models of Human Cancer", "MMHC", "mouse cancer models", "mouse model", "human cancer", "oncology", "tumor", "cancer genetics", "Mus musculus", "preclinical"]  
+  }
+];
+
+/* alias — the rest of this file works against DATABASES */
+const DATABASES = BIO_DATABASES;
+
+/* =========================================================
+   API PROXY CONFIG
+   Locus's AI-ranked search calls a small proxy server instead of
+   api.anthropic.com directly, so a real API key never sits exposed inside
+   this HTML file. Deploy locus-proxy-worker.js (see the instructions in
+   that file) and paste the resulting URL below. Leave it blank to skip
+   straight to the built-in keyword matcher.
+   ========================================================= */
+const API_PROXY_URL = ""; // e.g. "https://locus-proxy.yourname.workers.dev"
+
+
+/* =========================================================
+   TAB NAVIGATION
+   ========================================================= */
+const tabs = document.querySelectorAll('.tab');
+const views = { find: document.getElementById('view-find'), directory: document.getElementById('view-directory') };
+tabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    tabs.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    Object.values(views).forEach(v => v.classList.remove('active'));
+    views[tab.dataset.view].classList.add('active');
+    if (tab.dataset.view === 'directory') onDirectoryShown();
+  });
+});
+
+/* =========================================================
+   FIND VIEW — query → top 5 recommendations
+   ========================================================= */
+const queryForm = document.getElementById('query-form');
+const queryInput = document.getElementById('query-input');
+const submitBtn = document.getElementById('submit-btn');
+const resultsArea = document.getElementById('results-area');
+
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    queryInput.value = chip.dataset.example;
+    queryForm.requestSubmit();
+  });
+});
+
+queryForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const query = queryInput.value.trim();
+  if (!query) return;
+  await runSearch(query);
+});
+
+async function runSearch(query) {
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Searching…';
+  resultsArea.innerHTML = `
+    <div class="loading-line">
+      <span class="dot"></span> Consulting the catalog for the best fit…
+    </div>`;
+
+  let matches = null;
+  let usedFallback = false;
+
+  try {
+    matches = await fetchAIRecommendations(query);
+  } catch (err) {
+    usedFallback = true;
+  }
+
+  if (!matches || matches.length < 5) {
+    const already = new Set((matches || []).map(m => m.db.name));
+    const fillCount = 5 - (matches ? matches.length : 0);
+    const localTop = localKeywordMatch(query, fillCount, already);
+    matches = (matches || []).concat(localTop);
+    if (matches.length < 5) usedFallback = true;
+  }
+
+  renderResults(matches.slice(0, 5), usedFallback);
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Search the catalog →';
+}
+
+function buildPrompt(query) {
+  const catalog = DATABASES.map((d, i) => `${i + 1}. ${d.name} [${d.category}] — ${d.description}`).join('\n');
+  return `You are a research-databases librarian helping biologists find the right data resource.
+
+CATALOG:
+${catalog}
+
+USER NEED:
+"${query.replace(/"/g, "'")}"
+
+From the CATALOG only, choose the 5 entries that best fit the user's need, ranked best first.
+Respond with ONLY a raw JSON array (no markdown fences, no commentary, no extra keys) of exactly 5 objects shaped like:
+[{"name": "<name copied exactly from the catalog>", "reason": "<one sentence, under 22 words, specific to this user's need>"}]`;
+}
+
+async function fetchAIRecommendations(query) {
+  if (!API_PROXY_URL) throw new Error('No API proxy configured');
+
+  const response = await fetch(API_PROXY_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: buildPrompt(query) })
+  });
+
+  if (!response.ok) throw new Error('API request failed');
+  const data = await response.json();
+  const textBlocks = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+
+  const start = textBlocks.indexOf('[');
+  const end = textBlocks.lastIndexOf(']');
+  if (start === -1 || end === -1) throw new Error('No JSON array in response');
+
+  const parsed = JSON.parse(textBlocks.slice(start, end + 1));
+  const results = [];
+  for (const item of parsed) {
+    if (!item || !item.name) continue;
+    const db = findDbByName(item.name);
+    if (db && !results.some(r => r.db.name === db.name)) {
+      results.push({ db, reason: item.reason || db.description });
+    }
+  }
+  if (results.length === 0) throw new Error('No catalog matches found');
+  return results;
+}
+
+function findDbByName(name) {
+  const n = name.trim().toLowerCase();
+  let hit = DATABASES.find(d => d.name.toLowerCase() === n);
+  if (hit) return hit;
+  hit = DATABASES.find(d => d.name.toLowerCase().includes(n) || n.includes(d.name.toLowerCase()));
+  return hit || null;
+}
+
+const STOPWORDS = new Set(['a','an','the','i','need','want','for','of','to','in','on','with','and','or','is','are','my','me','looking','find','some','about','data','database','databases','study','research','project','please','can','you']);
+
+function localKeywordMatch(query, count, excludeNames) {
+  const terms = query.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(t => t.length > 2 && !STOPWORDS.has(t));
+  const scored = DATABASES
+    .filter(d => !excludeNames.has(d.name))
+    .map(d => {
+      const nameHay = d.name.toLowerCase();
+      const kwHay = (d.keywords || []).join(' ').toLowerCase();
+      const descHay = (d.description || '').toLowerCase() + ' ' + d.category.toLowerCase();
+      let score = 0;
+      terms.forEach(t => {
+        if (nameHay.includes(t)) score += 3;
+        if (kwHay.includes(t)) score += 2;
+        if (descHay.includes(t)) score += 1;
+      });
+      return { db: d, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .slice(0, count)
+    .map(s => ({ db: s.db, reason: s.db.description }));
+  return scored;
+}
+
+function renderResults(matches, usedFallback) {
+  if (!matches || matches.length === 0) {
+    resultsArea.innerHTML = `<div class="empty-state">No strong matches yet — try describing the organism, molecule type, or kind of data you're after.</div>`;
+    return;
+  }
+
+  const note = usedFallback
+    ? `<p class="results-note">Matched by keyword — live ranking is temporarily unavailable, so these are closest by topic.</p>`
+    : `<p class="results-note">Ranked best fit first, based on your description.</p>`;
+
+  const cards = matches.map((m, i) => `
+    <div class="specimen-card">
+      <div class="card-top">
+        <div class="stamp">${String(i + 1).padStart(2, '0')}</div>
+        <div class="card-heading">
+          <p class="eyebrow">${m.db.category}</p>
+          <h3 class="db-name">${m.db.name}</h3>
+        </div>
+      </div>
+      <p class="reason"><span class="reason-label">Why it fits —</span> ${m.reason}</p>
+      <div class="card-bottom">
+        <a class="visit-btn" href="${m.db.url}" target="_blank" rel="noopener noreferrer">Visit site ↗</a>
+      </div>
+    </div>
+  `).join('');
+
+  resultsArea.innerHTML = note + `<div class="card-grid">${cards}</div>`;
+}
+
+/* =========================================================
+   GALAXY ENGINE — the "Full directory" view
+   ========================================================= */
+
+/* ---- 1. group databases by category ---- */
+const categoryMap = new Map();
+DATABASES.forEach(db => {
+  if (!categoryMap.has(db.category)) categoryMap.set(db.category, []);
+  categoryMap.get(db.category).push(db);
+  db._matches = true;
+});
+const CATEGORY_NAMES = [...categoryMap.keys()];
+
+/* ---- 2. category "topic" keyword bags, for sun-to-sun distance ---- */
+function tokenize(str) {
+  return (str || '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(t => t.length > 2);
+}
+const categoryKeywordSets = new Map();
+CATEGORY_NAMES.forEach(cat => {
+  const set = new Set();
+  categoryMap.get(cat).forEach(db => {
+    (db.keywords || []).forEach(k => set.add(k.toLowerCase()));
+    tokenize(db.description).forEach(t => set.add(t));
+    tokenize(db.category).forEach(t => set.add(t));
+  });
+  categoryKeywordSets.set(cat, set);
+});
+function jaccard(a, b) {
+  let inter = 0;
+  const [small, large] = a.size < b.size ? [a, b] : [b, a];
+  small.forEach(x => { if (large.has(x)) inter++; });
+  const union = a.size + b.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+/* ---- 3. estimated era + in-category preference, for orbit distance ----
+   Known launch/founding years for well-documented resources; everything
+   else gets a deterministic (not random) placeholder era so the layout
+   is stable across reloads. These are editorial estimates for spacing
+   only, not asserted historical facts. */
+const YEAR_HINTS = {
+  biotools: 2015, consensuspathdb: 2009, entrez: 1991, expasy: 1993,
+  neuroscience_information_framework: 2008, pombase: 2011, subtiwiki: 2007,
+  tair: 1999, ddbj: 1986, embl: 1980, genbank: 1982,
+  international_nucleotide_sequence_database: 1980, sequence_read_archive: 2007,
+  hapmap: 2002, omim: 1987, refseq: 2000, "1000_genomes": 2008, eggnog: 2007,
+  arrayexpress: 2002, ensembl: 2000, ensembl_genomes: 2009, flybase: 1992,
+  geo: 2000, human_protein_atlas: 2003, legume_information_system: 2005,
+  phytozome: 2008, rgd: 1999, saccharomyces_genome_database: 1993, snpedia: 2006,
+  soybase: 1994, wormbase: 2000, xenbase: 2001, zfin: 1994, mirbase: 2002,
+  rfam: 2002, interpro: 1999, nextprot: 2009, hprd: 2003, pfam: 1997,
+  prints: 1991, prosite: 1988, protein_information_resource: 1984,
+  superfamily: 2001, swiss_prot: 1986, protein_data_bank: 1971, scop: 1994,
+  cath: 1997, modbase: 2000, swiss_model: 1993, biogrid: 2003, dip: 2000,
+  intact: 2004, string: 2000, disprot: 2005, mobidb: 2012, pdbsum: 1995,
+  uniprotkb: 2003, nci_nature_pathway_interaction_database: 2006, reactome: 2003,
+  wikipathways: 2008, biocyc: 1997, ecocyc: 1990, metacyc: 2004, brenda: 1987,
+  hmdb: 2007, kegg_pathway: 1995, sabiork: 2004, bacdive: 2013,
+  catalogue_of_life: 2001, ncbi_taxonomy: 1991, allen_brain_atlas: 2006,
+  empiar: 2016, biomodels: 2005, card: 2013, vfdb: 2004, patric: 2007,
+  resfinder: 2012, bold: 2007, tcga: 2006, cellosaurus: 2012, ctd: 2004,
+  hgnc: 2000, pubmed: 1996, jaspar: 2004, transfac: 1988, tdr_targets: 2007,
+  gigadb: 2013, dryad: 2009, ihec: 2010, methbase: 2012, minimotif_miner: 2006,
+};
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+function estimatedEra(db) {
+  if (YEAR_HINTS[db.id] !== undefined) return YEAR_HINTS[db.id];
+  return 2003 + (hashStr(db.id) % 18); // stable placeholder spread, undocumented resources
+}
+function preferenceScore(db) {
+  return (db.keywords || []).length * 3 + (db.description || '').length * 0.15;
+}
+
+const ORBIT_BASE = 26;
+
+/* ---- 3b. per-category "usage" metrics: how big a hub each category is ----
+   generality  = normalized database count (more entries = more built-out / general)
+   connectedness = normalized average keyword overlap with every other category
+                   (a proxy for how often a topic's tools get reached for
+                   alongside other topics)
+   usageScore combines both — it drives sun size, orbit spread, and how far
+   out the system sits (see targetRadius below). */
+const categorySimAvg = new Map();
+CATEGORY_NAMES.forEach(catA => {
+  let total = 0, n = 0;
+  CATEGORY_NAMES.forEach(catB => {
+    if (catA === catB) return;
+    total += jaccard(categoryKeywordSets.get(catA), categoryKeywordSets.get(catB));
+    n++;
+  });
+  categorySimAvg.set(catA, n ? total / n : 0);
+});
+
+// sqrt-compress the count before normalizing so one outsized category (the
+// 22-entry AMR group) doesn't flatten every other mid-sized category to "low"
+const counts = CATEGORY_NAMES.map(c => Math.sqrt(categoryMap.get(c).length));
+const sims = CATEGORY_NAMES.map(c => categorySimAvg.get(c));
+const minCount = Math.min(...counts), maxCount = Math.max(...counts);
+const minSim = Math.min(...sims), maxSim = Math.max(...sims);
+function norm(v, lo, hi) { return hi - lo < 1e-9 ? 0.5 : (v - lo) / (hi - lo); }
+
+const categoryStats = new Map();
+CATEGORY_NAMES.forEach(cat => {
+  const count = Math.sqrt(categoryMap.get(cat).length);
+  const sim = categorySimAvg.get(cat);
+  const generalityNorm = norm(count, minCount, maxCount);
+  const connectednessNorm = norm(sim, minSim, maxSim);
+  const specNorm = 1 - connectednessNorm;
+  const usageScore = generalityNorm * 0.7 + connectednessNorm * 0.3;
+  categoryStats.set(cat, { generalityNorm, connectednessNorm, specNorm, usageScore });
+});
+
+/* ---- 3c. planet orbit radius within its system (habitable-zone + era spread),
+   spacing scaled by how "used" the category is (busier hub = more spread out) ---- */
+CATEGORY_NAMES.forEach(cat => {
+  const stats = categoryStats.get(cat);
+  const orbitK = 13 + stats.usageScore * 24;
+  const members = categoryMap.get(cat).slice();
+  members.sort((a, b) => estimatedEra(b) - estimatedEra(a)); // newest first
+  let preferredIdx = 0, bestScore = -Infinity;
+  members.forEach((db, i) => { const s = preferenceScore(db); if (s > bestScore) { bestScore = s; preferredIdx = i; } });
+  const preferred = members[preferredIdx];
+  const rest = members.filter((_, i) => i !== preferredIdx);
+  const finalOrder = rest.slice();
+  const midIndex = Math.floor(finalOrder.length / 2);
+  finalOrder.splice(midIndex, 0, preferred);
+  finalOrder.forEach((db, i) => {
+    db._orbitIndex = i;
+    db._orbitRadius = ORBIT_BASE + Math.sqrt(i) * orbitK;
+    db._isPreferred = db === preferred;
+    db._angle = (hashStr(db.id) % 360) * (Math.PI / 180);
+    db._angularSpeed = 1.25 * (0.12 + (hashStr(db.id + 'x') % 100) / 400) / Math.max(1, Math.sqrt(db._orbitRadius));
+  });
+});
+
+/* ---- 4. suns: one per category. Distance from the centre of the galaxy is
+   deliberate, not emergent:
+     • near the centre  → low usage, low connectedness: unexplored corners
+     • the middle band  → high usage: general categories with many databases
+     • the far edge     → low usage but thematically isolated: specialised topics
+   Related categories (higher keyword overlap) still gravitate toward the
+   same angular neighbourhood, so "used together" topics sit near each other.
+   Sun SIZE is a separate axis from all of that — purely how many databases
+   (points) orbit it, relative to every other category, stretched across a
+   wide range so the busiest hubs read as dramatically bigger. */
+const GALAXY_MIN_R = 240, GALAXY_MID_R = 820, GALAXY_MAX_R = 1780;
+const MIN_SUN_R = 6, MAX_SUN_R = 64;
+
+const memberCounts = CATEGORY_NAMES.map(c => Math.sqrt(categoryMap.get(c).length));
+const minMemberCount = Math.min(...memberCounts), maxMemberCount = Math.max(...memberCounts);
+function sunRadiusFor(count) {
+  const t = norm(Math.sqrt(count), minMemberCount, maxMemberCount);
+  return MIN_SUN_R + t * (MAX_SUN_R - MIN_SUN_R);
+}
+
+const suns = CATEGORY_NAMES.map((cat, i) => {
+  const members = categoryMap.get(cat);
+  const stats = categoryStats.get(cat);
+  const sunRadius = sunRadiusFor(members.length);
+  const maxOrbit = Math.max(...members.map(db => db._orbitRadius)) + sunRadius + 18;
+
+  const baseR = GALAXY_MIN_R + stats.specNorm * (GALAXY_MAX_R - GALAXY_MIN_R);
+  const targetRadius = baseR * (1 - stats.generalityNorm) + GALAXY_MID_R * stats.generalityNorm;
+
+  const angle0 = (hashStr(cat) % 3600) / 3600 * Math.PI * 2;
+  // orbital speed: closer to the centre → faster (real orbital mechanics);
+  // bigger sun → more "inertia" → slower. Both effects compound.
+  const speedVariety = 0.85 + (hashStr(cat + 'orbit') % 100) / 330;
+  const centerAngularSpeed = (0.85 * speedVariety) / Math.sqrt((targetRadius + 70) / 60) / Math.sqrt((sunRadius + 3) / 6);
+
+  return {
+    category: cat, members, radius: sunRadius, maxOrbit, _matches: true,
+    x: Math.cos(angle0) * targetRadius, y: Math.sin(angle0) * targetRadius,
+    _targetRadius: targetRadius, _angle: angle0, _angularSpeed: centerAngularSpeed, _speedMul: 1,
+  };
+});
+suns.forEach(sun => sun.members.forEach(db => { db._sunRef = sun; }));
+
+(function layoutSuns() {
+  const N = suns.length;
+  const simCache = new Map();
+  function simBetween(i, j) {
+    const key = i < j ? i + '_' + j : j + '_' + i;
+    if (simCache.has(key)) return simCache.get(key);
+    const v = jaccard(categoryKeywordSets.get(suns[i].category), categoryKeywordSets.get(suns[j].category));
+    simCache.set(key, v);
+    return v;
+  }
+  for (let iter = 0; iter < 420; iter++) {
+    const fx = new Array(N).fill(0), fy = new Array(N).fill(0);
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const dx = suns[j].x - suns[i].x, dy = suns[j].y - suns[i].y;
+        const dist = Math.max(Math.sqrt(dx * dx + dy * dy), 0.01);
+        const minDist = suns[i].maxOrbit + suns[j].maxOrbit + 90;
+        const repulse = (minDist * minDist) / dist * 0.02;
+        const rx = (dx / dist) * repulse, ry = (dy / dist) * repulse;
+        fx[i] -= rx; fy[i] -= ry; fx[j] += rx; fy[j] += ry;
+
+        const sim = simBetween(i, j);
+        if (sim > 0) {
+          const targetDist = minDist * (1 - Math.min(sim, 0.85) * 0.32);
+          const pull = (dist - targetDist) * 0.011 * (0.3 + sim);
+          const ax = (dx / dist) * pull, ay = (dy / dist) * pull;
+          fx[i] += ax; fy[i] += ay; fx[j] -= ax; fy[j] -= ay;
+        }
+      }
+      // spring back toward this category's assigned radius band —
+      // this is what keeps "less explored / general / specialised" meaningful
+      // even after repulsion and topical clustering nudge things around.
+      const r = Math.max(Math.hypot(suns[i].x, suns[i].y), 0.01);
+      const radialErr = suns[i]._targetRadius - r;
+      fx[i] += (suns[i].x / r) * radialErr * 0.045;
+      fy[i] += (suns[i].y / r) * radialErr * 0.045;
+    }
+    for (let i = 0; i < N; i++) { suns[i].x += fx[i]; suns[i].y += fy[i]; }
+  }
+
+  // "gravity" pass: a hard rule that two systems simply cannot occupy the
+  // same space — resolve any remaining overlap by pushing the pair directly
+  // apart, regardless of what the softer forces above settled on.
+  for (let pass = 0; pass < 250; pass++) {
+    let anyOverlap = false;
+    for (let i = 0; i < N; i++) {
+      for (let j = i + 1; j < N; j++) {
+        const dx = suns[j].x - suns[i].x, dy = suns[j].y - suns[i].y;
+        const dist = Math.max(Math.sqrt(dx * dx + dy * dy), 0.01);
+        const minDist = suns[i].maxOrbit + suns[j].maxOrbit + 40;
+        if (dist < minDist) {
+          anyOverlap = true;
+          const overlap = (minDist - dist) / 2;
+          const ux = dx / dist, uy = dy / dist;
+          suns[i].x -= ux * overlap; suns[i].y -= uy * overlap;
+          suns[j].x += ux * overlap; suns[j].y += uy * overlap;
+        }
+      }
+    }
+    if (!anyOverlap) break;
+  }
+
+  // lock in the settled angle so the orbit-around-centre animation continues smoothly from here
+  suns.forEach(s => { s._angle = Math.atan2(s.y, s.x); s._radiusNow = Math.hypot(s.x, s.y); });
+})();
+
+/* ---- 5. canvas + camera ---- */
+const canvas = document.getElementById('galaxy-canvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('galaxy-tooltip');
+const stageEl = document.querySelector('.galaxy-stage');
+const galaxyFilter = document.getElementById('galaxy-filter');
+const galaxyReset = document.getElementById('galaxy-reset');
+
+let dpr = Math.min(window.devicePixelRatio || 1, 2.5);
+const MIN_ZOOM = 0.12, MAX_ZOOM = 5;
+let camera = { panX: 0, panY: 0, zoom: 1 };
+let initialCamera = null;
+let hasFitted = false;
+let filterActive = false;
+let hoveredDb = null;
+let hoveredSun = null;
+let renderedPlanets = [];
+let renderedSuns = [];
+let bgStars = null;
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+function worldToScreen(wx, wy) {
+  const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  return [cw / 2 + camera.panX + wx * camera.zoom, ch / 2 + camera.panY + wy * camera.zoom];
+}
+function screenToWorld(sx, sy) {
+  const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  return [(sx - cw / 2 - camera.panX) / camera.zoom, (sy - ch / 2 - camera.panY) / camera.zoom];
+}
+
+function computeBounds() {
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  suns.forEach(s => {
+    minX = Math.min(minX, s.x - s.maxOrbit); maxX = Math.max(maxX, s.x + s.maxOrbit);
+    minY = Math.min(minY, s.y - s.maxOrbit); maxY = Math.max(maxY, s.y + s.maxOrbit);
+  });
+  return { minX, minY, maxX, maxY };
+}
+function fitView() {
+  const b = computeBounds();
+  const w = Math.max(b.maxX - b.minX, 1), h = Math.max(b.maxY - b.minY, 1);
+  const cw = canvas.clientWidth || 900, ch = canvas.clientHeight || 600;
+  const zoom = Math.min(cw / (w * 1.12), ch / (h * 1.12));
+  camera.zoom = clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+  const cx = (b.minX + b.maxX) / 2, cy = (b.minY + b.maxY) / 2;
+  camera.panX = -cx * camera.zoom;
+  camera.panY = -cy * camera.zoom;
+}
+
+function onDirectoryShown() {
+  if (!hasFitted) {
+    fitView();
+    initialCamera = { ...camera };
+    hasFitted = true;
+  }
+}
+
+galaxyReset.addEventListener('click', () => {
+  if (initialCamera) camera = { ...initialCamera };
+});
+
+galaxyFilter.addEventListener('input', e => {
+  const q = e.target.value.trim().toLowerCase();
+  filterActive = q.length > 0;
+  DATABASES.forEach(db => {
+    db._matches = !filterActive || (db.name + ' ' + db.category + ' ' + db.description + ' ' + (db.keywords || []).join(' ')).toLowerCase().includes(q);
+  });
+  suns.forEach(sun => { sun._matches = sun.members.some(db => db._matches); });
+});
+
+/* ---- 6. drawing ---- */
+function ensureBgStars(cw, ch) {
+  if (bgStars) return;
+  bgStars = [];
+  for (let i = 0; i < 200; i++) {
+    bgStars.push({ fx: Math.random(), fy: Math.random(), r: Math.random() * 1.1 + 0.3, o: Math.random() * 0.45 + 0.12 });
+  }
+}
+function drawBackgroundStars(cw, ch) {
+  ensureBgStars(cw, ch);
+  bgStars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.fx * cw, s.fy * ch, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${s.o})`;
+    ctx.fill();
+  });
+}
+
+function draw() {
+  const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  if (cw === 0 || ch === 0) return;
+  const targetW = Math.round(cw * dpr), targetH = Math.round(ch * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW; canvas.height = targetH;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, cw, ch);
+  drawBackgroundStars(cw, ch);
+
+  renderedPlanets.length = 0;
+  renderedSuns.length = 0;
+
+  suns.forEach(sun => {
+    const [sx, sy] = worldToScreen(sun.x, sun.y);
+    const dimSun = filterActive && !sun._matches;
+
+    sun.members.forEach(db => {
+      const r = db._orbitRadius * camera.zoom;
+      if (r < 3) return;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, r, r * 0.55, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = dimSun ? 'rgba(255,255,255,0.008)' : 'rgba(255,255,255,0.03)';
+      ctx.lineWidth = 0.6;
+      ctx.stroke();
+    });
+
+    const sunR = Math.max(1.6, sun.radius * camera.zoom * 0.6);
+    const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, sunR * 2.4);
+    glow.addColorStop(0, dimSun ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.55)');
+    glow.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(sx, sy, sunR * 2.4, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = dimSun ? 'rgba(200,200,200,0.35)' : '#F4F4F2';
+    ctx.beginPath(); ctx.arc(sx, sy, sunR, 0, Math.PI * 2); ctx.fill();
+
+    if (hoveredSun === sun) {
+      ctx.fillStyle = dimSun ? 'rgba(160,160,160,0.3)' : 'rgba(230,230,230,0.95)';
+      ctx.font = '10px "IBM Plex Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(sun.category.toUpperCase(), sx, sy + sunR + 14);
+    }
+
+    renderedSuns.push({ sun, x: sx, y: sy, r: Math.max(sunR, 13) });
+
+    sun.members.forEach(db => {
+      const orbitR = db._orbitRadius * camera.zoom;
+      const px = sx + Math.cos(db._angle) * orbitR;
+      const py = sy + Math.sin(db._angle) * orbitR * 0.55;
+      const isHover = hoveredDb === db;
+      const dim = filterActive && !db._matches;
+      const baseRad = Math.min(1.5 + Math.sqrt(db._orbitRadius) * 0.3, 7.5);
+      const rad = isHover ? baseRad + 2.4 : baseRad;
+
+      ctx.beginPath();
+      ctx.arc(px, py, rad, 0, Math.PI * 2);
+      ctx.fillStyle = dim ? 'rgba(255,255,255,0.15)' : (db._isPreferred ? '#FFFFFF' : 'rgba(228,228,228,0.92)');
+      ctx.fill();
+
+      if (isHover) {
+        ctx.beginPath();
+        ctx.arc(px, py, rad + 3.5, 0, Math.PI * 2);
+        ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      renderedPlanets.push({ db, x: px, y: py, r: Math.max(rad + 6, 8) });
+    });
+  });
+}
+
+/* ---- 7. animation loop ---- */
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let lastT = performance.now();
+function frame(t) {
+  const dt = Math.min((t - lastT) / 1000, 0.05);
+  lastT = t;
+  const activeSun = hoveredSun || (hoveredDb && hoveredDb._sunRef) || null;
+  if (!reduceMotion) {
+    suns.forEach(sun => {
+      const target = sun === activeSun ? 0.08 : 1;
+      sun._speedMul += (target - sun._speedMul) * Math.min(1, dt * 12);
+      sun._angle += sun._angularSpeed * sun._speedMul * dt;
+      sun.x = Math.cos(sun._angle) * sun._radiusNow;
+      sun.y = Math.sin(sun._angle) * sun._radiusNow;
+      sun.members.forEach(db => { db._angle += db._angularSpeed * sun._speedMul * dt; });
+    });
+  }
+  draw();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* ---- 8. interaction: hover + drag + click (mouse) ---- */
+function findPlanetAt(sx, sy) {
+  let best = null, bestD = Infinity;
+  for (const p of renderedPlanets) {
+    const d = Math.hypot(p.x - sx, p.y - sy);
+    if (d < p.r && d < bestD) { best = p; bestD = d; }
+  }
+  return best;
+}
+function findSunAt(sx, sy) {
+  let best = null, bestD = Infinity;
+  for (const s of renderedSuns) {
+    const d = Math.hypot(s.x - sx, s.y - sy);
+    if (d < s.r && d < bestD) { best = s; bestD = d; }
+  }
+  return best;
+}
+function showTooltip(text, clientX, clientY) {
+  const rect = stageEl.getBoundingClientRect();
+  tooltip.textContent = text;
+  tooltip.style.left = (clientX - rect.left) + 'px';
+  tooltip.style.top = (clientY - rect.top) + 'px';
+  tooltip.classList.add('visible');
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+
+let isDragging = false, dragMoved = false, lastX = 0, lastY = 0;
+
+canvas.addEventListener('mousedown', e => {
+  isDragging = true; dragMoved = false; lastX = e.clientX; lastY = e.clientY;
+  canvas.classList.add('dragging');
+});
+window.addEventListener('mousemove', e => {
+  if (isDragging) {
+    const dx = e.clientX - lastX, dy = e.clientY - lastY;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) dragMoved = true;
+    camera.panX += dx; camera.panY += dy;
+    lastX = e.clientX; lastY = e.clientY;
+    hideTooltip();
+    return;
+  }
+  if (!views.directory.classList.contains('active')) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  const hit = findPlanetAt(sx, sy);
+  hoveredDb = hit ? hit.db : null;
+  if (hit) {
+    hoveredSun = null;
+    canvas.style.cursor = 'pointer';
+    showTooltip(hit.db.name, e.clientX, e.clientY);
+  } else {
+    const sunHit = findSunAt(sx, sy);
+    hoveredSun = sunHit ? sunHit.sun : null;
+    canvas.style.cursor = 'grab';
+    hideTooltip();
+  }
+});
+window.addEventListener('mouseup', e => {
+  if (!isDragging) return;
+  isDragging = false; canvas.classList.remove('dragging');
+  if (!dragMoved) {
+    // Prefer the planet we were already hovering (tracked continuously on
+    // mousemove) over a fresh hit-test — by the time mouseup fires the
+    // point may have drifted a couple of pixels mid-orbit, which shouldn't
+    // cost the person a click they'd already lined up.
+    if (hoveredDb) {
+      window.open(hoveredDb.url, '_blank', 'noopener,noreferrer');
+    } else {
+      const rect = canvas.getBoundingClientRect();
+      const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+      const hit = findPlanetAt(sx, sy);
+      if (hit) window.open(hit.db.url, '_blank', 'noopener,noreferrer');
+    }
+  }
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  const [wx, wy] = screenToWorld(sx, sy);
+  const factor = Math.exp(-e.deltaY * 0.0015);
+  camera.zoom = clamp(camera.zoom * factor, MIN_ZOOM, MAX_ZOOM);
+  const cw = canvas.clientWidth, ch = canvas.clientHeight;
+  camera.panX = sx - cw / 2 - wx * camera.zoom;
+  camera.panY = sy - ch / 2 - wy * camera.zoom;
+}, { passive: false });
+
+/* ---- 9. touch: one-finger pan + tap, two-finger pinch ---- */
+function touchDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX, dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+let touchMode = null, touchStart = {}, lastTapDb = null, lastTapTime = 0;
+
+canvas.addEventListener('touchstart', e => {
+  if (e.touches.length === 1) {
+    touchMode = 'pan';
+    touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY, moved: false };
+  } else if (e.touches.length === 2) {
+    touchMode = 'pinch';
+    touchStart = { d: touchDist(e.touches), zoom: camera.zoom };
+  }
+}, { passive: true });
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (touchMode === 'pan' && e.touches.length === 1) {
+    const dx = e.touches[0].clientX - touchStart.x, dy = e.touches[0].clientY - touchStart.y;
+    if (Math.abs(dx) > 3 || Math.abs(dy) > 3) touchStart.moved = true;
+    camera.panX += dx; camera.panY += dy;
+    touchStart.x = e.touches[0].clientX; touchStart.y = e.touches[0].clientY;
+  } else if (touchMode === 'pinch' && e.touches.length === 2) {
+    const d = touchDist(e.touches);
+    camera.zoom = clamp(touchStart.zoom * (d / touchStart.d), MIN_ZOOM, MAX_ZOOM);
+  }
+}, { passive: false });
+
+canvas.addEventListener('touchend', e => {
+  if (touchMode === 'pan' && !touchStart.moved) {
+    const rect = canvas.getBoundingClientRect();
+    const sx = touchStart.x - rect.left, sy = touchStart.y - rect.top;
+    const hit = findPlanetAt(sx, sy);
+    if (hit) {
+      const now = performance.now();
+      if (lastTapDb === hit.db && now - lastTapTime < 900) {
+        window.open(hit.db.url, '_blank', 'noopener,noreferrer');
+        lastTapDb = null; hoveredDb = null; hideTooltip();
+      } else {
+        hoveredDb = hit.db;
+        showTooltip(hit.db.name, touchStart.x, touchStart.y);
+        lastTapDb = hit.db; lastTapTime = now;
+        setTimeout(() => { if (hoveredDb === hit.db) { hoveredDb = null; hideTooltip(); } }, 1800);
+      }
+    } else {
+      hoveredDb = null; hideTooltip();
+    }
+  }
+  touchMode = null;
+});
+
+</script>
+</body>
+</html>
